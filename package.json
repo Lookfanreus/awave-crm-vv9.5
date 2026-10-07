@@ -1,0 +1,50 @@
+{
+  "name": "awave-crm",
+  "version": "0.9.5",
+  "description": "Awave CRM — flagship self-host da linha Awave",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "sync:foundation": "node scripts/sync-foundation.mjs",
+    "verify:foundation": "node scripts/verify-foundation-sync.mjs",
+    "verify:no-inlining": "node scripts/verify-no-inlining.mjs",
+    "check:motor": "node scripts/check-motor-untouched.mjs",
+    "gen:manifest": "node scripts/gen-manifest.mjs",
+    "audit:entrega": "node scripts/auditar-entrega.mjs"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.26",
+      "sharp": "^0.35.3"
+    }
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.74",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@mastra/core": "^1.45.0",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "adm-zip": "^0.6.0",
+    "lucide-react": "^1.25.0",
+    "next": "~16.2.12",
+    "postgres": "^3.4.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}

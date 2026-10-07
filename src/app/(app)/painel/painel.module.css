@@ -1,0 +1,367 @@
+/* painel.module.css — dashboard home. Kit v2.
+ *
+ * ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local.
+ *
+ * 🔴 O ESPAÇO ENTRE BLOCOS NÃO É MAIS COMPOSTO, e os `margin-bottom` que faziam a composição
+ * SAÍRAM. Eles existiam pra somar com o `gap` do `.conteudo` e chegar aos 32px que a regra de
+ * contenção ANTIGA pedia entre blocos sem caixa. Com a regra invertida, quem separa dois
+ * painéis é a borda de cada um: o vão é o `gap` do `.conteudo` (12px) e nada mais. Um
+ * `margin-bottom` sobrevivente aqui é resto da regra morta — e aparece como um único bloco
+ * mais afastado que os outros. */
+
+/* ---- A faixa de KPI — quatro painéis, com o vão do protótipo ----
+ * O `KpiCard` desenha a própria caixa desde a inversão da regra. O que era filete divisor
+ * entre colunas virou a borda de cada card; o filete que fechava a faixa embaixo virou a
+ * borda inferior deles. */
+.faixaKpi {
+  display: grid;
+  /* `repeat(4, minmax(0, 1fr))` e não `3fr 3fr 3fr 3fr`: `3fr` é `minmax(auto, 3fr)`, e
+     esse `auto` deixa o min-content do bloco (número grande, sem quebra) virar piso de
+     largura — era ele que estourava a página pra fora da tela no celular. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+/* ---- Linhas de blocos ----
+ * `align-items: start` porque os dois lados variam MUITO de altura: com a agenda vazia e
+ * cinco travados ao lado, o `stretch` padrão esticava o bloco vazio até a altura do outro. */
+.gridAcionavel {
+  display: grid;
+  grid-template-columns: 6fr 6fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* `6fr 6fr` e não o `5fr 7fr` de antes — o `5fr 7fr` é o único corte que a grade de 12
+ * recusa nominalmente. Não é só conformidade: com o 5+7 a fronteira desta linha caía em x=761
+ * enquanto a faixa de KPI acima tem divisor em x=852 — dois "começos de coluna" a 90px de
+ * distância na mesma tela. Sem as caixas, o alinhamento vertical é o que restou fazendo o
+ * trabalho de estrutura, e o 6+6 cai em cima do divisor do meio da faixa: duas linhas
+ * compartilhando uma trilha.
+ *
+ * O `.grid2`, que punha o funil e "Fecha em breve" lado a lado, MORREU: os dois passaram a
+ * ser blocos de largura cheia. Ver a nota no `page.tsx`. */
+
+@media (max-width: 1024px) {
+  .faixaKpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gridAcionavel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Numa faixa de ~340px úteis, dois KPIs lado a lado espremem o valor. Empilha.
+ *
+ * ⚠️ Os blocos de reposicionamento de divisor que moravam aqui saíram junto com os divisores:
+ * quatro caixas empilhadas se separam pela própria borda, em qualquer número de colunas, e
+ * era justamente o divisor que precisava saber quem abria fileira. */
+@media (max-width: 640px) {
+  .faixaKpi {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Funil: uma LINHA por etapa, comprimento = valor (protótipo aprovado) ----
+ *
+ * 🔴 ERAM BARRAS VERTICAIS, e a queixa da auditoria era a primeira delas: "Novo lead" nasce
+ * com `#94a3b8` no seed, então a etapa de entrada de TODO funil aparecia CINZA — a cor que o
+ * produto inteiro usa pra dizer "desabilitado". A cor por etapa não sumiu, ela desceu pro
+ * PONTO de 6px ao lado do nome; quem pinta a barra agora é a rampa `--acento` → `--rampa-fim`
+ * calculada pelo índice (`src/lib/rampa.ts`), que carrega POSIÇÃO no funil.
+ *
+ * Horizontal também resolve o que a vertical não resolvia: o nome da etapa cabe escrito por
+ * extenso em vez de virar reticências embaixo de uma coluna de 54px, e o valor forma coluna
+ * alinhada à direita — que é como se compara dinheiro. */
+.chartVazio {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: var(--s-7) var(--s-4);
+  font-size: var(--fs-body);
+  color: var(--tinta-3);
+}
+
+.funil {
+  list-style: none;
+}
+
+/* As quatro trilhas: nome fixo · barra elástica · valor fixo · contagem fixa.
+ *
+ * Só a barra é `1fr`. É isso que faz TODOS os valores caírem no mesmo x e a coluna de
+ * dinheiro existir — com o valor no fluxo, cada linha terminaria num lugar diferente e a
+ * comparação entre etapas viraria leitura de números soltos.
+ *
+ * A sangria negativa faz o hover ultrapassar a margem do bloco em 8px de cada lado, então a
+ * faixa realçada envolve o texto em vez de encostar nele. */
+.linhaEtapa {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) 108px 40px;
+  align-items: center;
+  gap: var(--s-4);
+  height: 34px;
+  margin: 0 calc(-1 * var(--s-3));
+  padding: 0 var(--s-3);
+  border-radius: var(--r-controle);
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.linhaEtapa:hover {
+  background: var(--superficie-hover);
+}
+
+.nomeEtapa {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  font-size: var(--fs-body);
+  color: var(--tinta-2);
+}
+
+.rotuloEtapa {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* O disco é o ÚNICO lugar do painel onde a cor escolhida pra etapa ainda aparece — e é
+ * suficiente: em 6px ela identifica sem virar a tinta dominante da tela. */
+.ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
+}
+
+/* O trilho é `--trilho`, o token do kit pro que é CALHA (poço de kanban, trilho de
+ * segmented). Ele precisa ser visível: é o comprimento total que transforma cinco barras
+ * soltas em cinco barras comparáveis. */
+.trilhoEtapa {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--trilho);
+  overflow: hidden;
+}
+
+/* A largura final vem inline do React (`style={{ width: '64%' }}`) — é dado, não estilo.
+ *
+ * 🔴 A animação é CSS PURO, sem `requestAnimationFrame`: o keyframe só declara o `from`, e o
+ * `to` implícito é a largura que o elemento já tem. Isso importa por dois motivos —
+ * (1) o bloco global de `prefers-reduced-motion` alcança CSS e NÃO alcança laço em JS
+ *     (está escrito em vermelho no `globals.css`, dentro do próprio bloco da preferência);
+ *     com duração de .01ms e atraso zerado, a barra aparece no tamanho final, sem animar e
+ *     sem esperar;
+ * (2) `backwards` (e não `forwards`) porque o estado a preservar é o de ANTES: durante o
+ *     atraso do escalonamento a barra fica em 0; depois que a animação acaba ela volta pra
+ *     largura do próprio elemento, que já é a certa.
+ *
+ * Anima `width` e não `transform: scaleX`, apesar do reflow: com raio de pílula, escalar no
+ * eixo X achata as duas pontas arredondadas e a barra chega deformada. São ≤ 9 linhas. */
+/* ⚠️ A ANIMAÇÃO SAIU DAQUI e virou `mov.cresce` (`src/app/movimento.module.css`), composta
+ * no `.tsx`. O `@keyframes cresce` que morava aqui era idêntico byte a byte ao de
+ * `relatorios.module.css` — e a duplicata não era desleixo: keyframe de CSS Module é
+ * escopado por arquivo, então antes da classe compartilhada existir não HAVIA como reusar.
+ * Os dois funis mostram o mesmo objeto; agora se movem pela mesma regra. */
+.barraEtapa {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+}
+
+.valorEtapa {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--tinta);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.qtdEtapa {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--tinta-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numa faixa estreita as trilhas fixas (132 + 108 + 40 + 3 gaps = 316px) não deixam largura
+ * pra barra nenhuma. A contagem sai primeiro: ela é a legenda, e o número de negócios é o
+ * dado menos decisivo dos três. */
+@media (max-width: 560px) {
+  .linhaEtapa {
+    grid-template-columns: 96px minmax(0, 1fr) 96px;
+  }
+
+  .qtdEtapa {
+    display: none;
+  }
+}
+
+/* Seletor de janela (7/30/90) — trilho segmentado, a receita do kit: trilho `--trilho`,
+ * ativo em `--superficie` com borda `--linha-forte`. NÃO é azul sólido: o segmented diz "qual
+ * recorte estou vendo", não "clique aqui", e sólido ele competia com o valor dos KPIs.
+ * O inativo carrega borda TRANSPARENTE só pra não pular 2px quando vira ativo. */
+.periodo {
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+}
+
+.periodoItem,
+.periodoAtivo {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.periodoItem { color: var(--tinta-3); }
+.periodoItem:hover { color: var(--tinta); }
+
+.periodoAtivo {
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+
+/* O anel de DENTRO, por aritmética: o trilho `.periodo` tem `padding: var(--s-1)` e os itens se
+ * separam por `gap: var(--s-1)` — 2px nos dois casos —, e o anel de fora alcança 4px. Ele
+ * vazaria pra fora do trilho e pousaria sobre o item vizinho, em vez de circundar o focado.
+ *
+ * Sem esta regra os três períodos caíam no anel padrão do navegador, que no tema escuro é
+ * quase da cor da superfície e simplesmente não aparece. */
+.periodoItem:focus-visible,
+.periodoAtivo:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* ⚠️ `.nome` e `.subNome` saíram nesta rodada do kit: eram o rótulo e a contagem CENTRALIZADOS
+ * embaixo de cada coluna do gráfico vertical. No funil horizontal os dois viraram trilhas da
+ * grade (`.rotuloEtapa` e `.qtdEtapa`), alinhadas à esquerda e à direita. */
+
+/* ---- Widget "Minha agenda" (Atividades·C) ----
+ * ⚠️ Este bloco nasceu usando tokens que NÃO EXISTEM no kit (`--radius`, `--brand`,
+ * `--space-2`) e caía calado nos fallbacks hardcoded: raio e padding fora do sistema, e um
+ * azul #2563eb que não era o da marca. Era, ao pé da letra, o card que não combinava com a
+ * página — e ninguém viu, porque o fallback do `var()` só dispara quando o token falta.
+ * Agora não há fallback nenhum aqui: token errado passa a APARECER.
+ *
+ * 🔴 Ele fica lado a lado com um `ListCard` no `.gridAcionavel`, então cabeçalho e linha
+ * copiam a receita de lá — HOJE isso quer dizer painel com borda, título 13/600 `--tinta` e
+ * lista recuada, sem divisor entre linhas. Dois blocos vizinhos com tratamento diferente
+ * eram o que fazia a fileira parecer duas telas coladas, e continua sendo: se o `ListCard`
+ * mudar, este muda junto. */
+.agendaBloco {
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+}
+
+.agendaHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+.agendaHead h3 {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-body);
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+.agendaVerTudo {
+  font-size: var(--fs-body);
+  color: var(--acento);
+  text-decoration: none;
+}
+
+.agendaVerTudo:hover { color: var(--acento-hover); }
+
+/* O anel de FORA: é um link de texto no cabeçalho do cartão, com folga em volta e nada que o
+ * clipe. Sem esta regra ele caía no anel padrão do navegador. */
+.agendaVerTudo:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* ⚠️ O `.agendaVazio` (uma linha de texto em `--tinta-3`) saiu daqui nesta rodada do kit. O bloco vazio
+ * agora é o `components/ui/EstadoVazio`: ícone + título + explicação + saída. A frase cinza
+ * descrevia o vazio e parava aí, e quem lê o estado vazio é exatamente quem ainda não
+ * entendeu o produto — descrever não basta, tem que ter para onde ir.
+ *
+ * O que sobrou local é só o BOTÃO, porque o kit ainda não tem componente de botão e cada
+ * tela desenha o seu (`.botaoPrimario` no /config e no /automacoes). Ele copia essa receita
+ * em vez de inventar uma sexta variação. */
+.agendaAtrasoContagem {
+  padding: 0 var(--s-5) var(--s-3);
+  color: var(--erro);
+  font-weight: 500;
+  font-size: var(--fs-body);
+}
+
+/* Recuo e ritmo do `.lista` do `ListCard`, pelo mesmo motivo do cabeçalho: os dois blocos são
+ * vizinhos na mesma fileira. O divisor entre itens saiu junto com o de lá. */
+.agendaLista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: 0 var(--s-3) var(--s-3);
+}
+
+.agendaLink {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--h-row);
+  padding: var(--s-3);
+  border-radius: var(--r-controle);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.agendaLink:hover { background: var(--superficie-hover); }
+
+/* O anel de DENTRO, como em toda linha de lista do produto: as linhas se empilham com
+ * `gap: var(--s-1)` (2px) e o anel de fora alcança 4px — ele cobriria a linha vizinha. */
+.agendaLink:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+.agendaIcone { color: var(--icone-mudo); display: inline-flex; }
+
+.agendaTitulo {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+  color: var(--tinta);
+}
+
+.agendaQuando {
+  flex: 0 0 auto;
+  font-size: var(--fs-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}

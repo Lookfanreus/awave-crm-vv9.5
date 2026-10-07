@@ -1,0 +1,124 @@
+/* O vocabulário de FORMULÁRIO do produto — um só lugar.
+ *
+ * Medido antes de escrever: onze definições de `.input`, oito de `.select`, duas de
+ * `.textarea`, nove de `.rotulo` (quatro delas byte a byte idênticas), cinco de `.campo`, seis
+ * de `.ajuda` e nove de `.erro`, espalhadas por dez módulos. Como nos botões, cada cópia usava
+ * token certo: o que divergia era o padding (`--s-2`/`--s-3` de bloco), a presença ou não de
+ * `min-height`, e se o `outline: none` vinha antes ou depois do anel de foco. */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  /* Sem isto, um campo dentro de flex/grid recusa encolher e estoura a linha no 375px — é o
+   * `min-width: auto` implícito do item de flex. */
+  min-width: 0;
+}
+
+.rotulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-2);
+}
+
+/* O asterisco de obrigatório. Vermelho e `aria-hidden`: quem usa leitor de tela recebe a
+ * informação pelo `required` do controle, que é o canal correto — repetir "asterisco" no nome
+ * acessível só polui a leitura. */
+.marcaObrigatorio {
+  color: var(--erro);
+}
+
+.ajuda,
+.mensagemErro {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.ajuda {
+  color: var(--tinta-3);
+}
+
+.mensagemErro {
+  color: var(--erro);
+}
+
+/* ── O controle ────────────────────────────────────────────────────────────────────────────
+ *
+ * Uma regra para `input`, `select` e `textarea`: a caixa é a mesma, o que muda é o miolo. */
+.controle {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--h-control);
+  padding: 0 var(--s-4);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  /* `font: inherit` não serve: ele levaria junto o `font-weight` de quem monta o campo, e um
+   * input dentro de um rótulo em 500 sairia seminegrito. Só a família é herdada. */
+  font-family: inherit;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  transition: border-color var(--t-rapido) var(--suave);
+}
+
+.controle::placeholder {
+  color: var(--tinta-3);
+}
+
+/* ⚠️ O `:not([aria-busy='true'])` acompanha o `:not(:disabled)` pelo mesmo motivo que ele
+ * acompanha o `:not([aria-disabled='true'])` em toda regra do `Botao`: o campo congelado
+ * continua recebendo hover, porque nem `readOnly` nem `aria-busy` mudam algo no navegador —
+ * e a borda acendendo diria que ele ainda aceita o que a pessoa digitar. */
+.controle:hover:not(:disabled):not([aria-busy='true']) {
+  border-color: var(--icone-mudo);
+}
+
+/* O MESMO anel do `Botao`, e é o único do produto. */
+.controle:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* 🔴 O olho lê a borda vermelha, o leitor de tela lê o `aria-invalid` — e os dois saem do
+ * MESMO atributo de propósito. Uma classe `.invalido` separada criaria a versão em que a cor
+ * diz uma coisa e a semântica diz outra. */
+.controle[aria-invalid='true'] {
+  border-color: var(--erro);
+}
+
+.controle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Operação em curso — o par da `carregando` do `Botao`, do lado do formulário. Quem congela um
+ * campo enquanto a ação roda escreve `readOnly` + `aria-busy`, nunca `disabled`: o `disabled`
+ * nativo tira o controle da ordem de foco no meio da ação e o navegador devolve o foco pro
+ * `<body>` — e num campo isso é pior que num botão, porque o campo costuma ser onde a pessoa
+ * está quando dispara a ação (Enter no compositor). Ver o contrato de teclado no `Botao.tsx`.
+ *
+ * 🔴 Quem esmaece é o `aria-busy`, NÃO o `[readonly]`. Campo somente-leitura de exibição não
+ * está fora de ação — esmaecê-lo afirmaria que a tela está trabalhando quando ela não está.
+ * Sem `cursor: not-allowed`: o texto continua selecionável e copiável, que é o que `readOnly`
+ * promete. */
+.controle[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+/* `padding-block` volta porque a área de texto tem várias linhas: com `padding: 0` a primeira
+ * linha encosta na borda de cima. */
+.areaTexto {
+  /* 88px = quatro linhas de texto mais o respiro. Não vira token porque tem um leitor só, e
+   * token com um leitor é indireção sem ganho — o valor é o mesmo que a área de notas do
+   * detalhe de negócio já usava. */
+  min-height: 88px;
+  padding: var(--s-3) var(--s-4);
+  resize: vertical;
+}
+
+.selecao {
+  cursor: pointer;
+}

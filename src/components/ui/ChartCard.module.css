@@ -1,0 +1,69 @@
+/* ChartCard.module.css — bloco de gráfico, sob a regra de contenção.
+ *
+ * 🔴 PAINEL, como todo bloco de conteúdo desde a inversão da regra (ver `globals.css`):
+ * `--superficie` + `--linha` + `--r-painel` + `--elev-1`. O filete do cabeçalho saiu — a
+ * borda da caixa já marca onde a seção começa.
+ *
+ * ⚠️ O cabeçalho tem que ser IDÊNTICO ao do `ListCard.module.css` ao pixel: os dois ficam
+ * lado a lado no painel e é o alinhamento das duas primeiras linhas de base que faz a fileira
+ * ler como um sistema só. Mexeu num, mexa no outro. */
+
+.bloco {
+  /* flex-column: o corpo (gráfico) cresce e enche a altura do bloco, acompanhando a lista
+   * ao lado sem deixar vão embaixo. */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  /* O respiro do CORPO do painel. O cabeçalho traz o dele próprio, então o `padding-top` fica
+   * em zero aqui e o de baixo/laterais vale pro gráfico. */
+  padding: 0 var(--s-5) var(--s-5);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  /* O recuo lateral negativo devolve o cabeçalho à borda do painel: o `padding` do `.bloco`
+   * serve ao gráfico, e um cabeçalho recuado mais que o resto criaria uma terceira coluna de
+   * alinhamento dentro de uma caixa que só deveria ter uma. */
+  margin-inline: calc(var(--s-5) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+  /* Respiro entre o título e o gráfico. Maior que o da lista de propósito: linha de texto
+   * assenta perto do título sem estranheza, barra colada nele lê como se a barra saísse da
+   * régua. */
+  margin-bottom: var(--s-4);
+}
+
+/* 13/600 `--tinta`. Ver a nota gêmea no `ListCard.module.css`: sem caixa o rótulo era
+ * etiqueta apagada pra não roubar do filete o papel de marcar a seção; com a caixa marcando,
+ * ele volta a ser o nome do painel. */
+.titulo {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-body);
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+.acao {
+  margin-left: auto;
+}
+
+/* O total à direita do título. Idêntico ao `.meta` do ListCard — os dois cabeçalhos têm que
+ * ser a mesma coisa ao pixel, senão o alinhamento que faz os blocos lerem como um sistema
+ * se perde. */
+.meta {
+  margin-left: auto;
+  font-size: var(--fs-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meta b {
+  color: var(--tinta);
+  font-weight: 500;
+}

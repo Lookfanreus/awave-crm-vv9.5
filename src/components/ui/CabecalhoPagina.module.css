@@ -1,0 +1,74 @@
+/* CabecalhoPagina.module.css — o cabeçalho de TODA tela do app (kit v2). Nunca desenhe um
+ * h1 local: título 21/500, subtítulo 13/400 logo abaixo, ações alinhadas pela linha de base.
+ *
+ * Antes cada tela desenhava o seu, e nenhuma concordava com a outra: agenda/automações/
+ * funis/relatórios em 22/600, campos/importar em 24/600, painel/negócios/config em 24/500.
+ * Três tratamentos para o elemento mais repetido do produto. */
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  /* Espaço do cabeçalho para o CONTEÚDO. O de dentro (título→subtítulo) é apertado de
+   * propósito — ver `.sub`. Um cabeçalho só lê como bloco quando a distância interna é
+   * bem menor que a externa.
+   *
+   * ⚠️ Eram `--s-6` (24), e caiu pra `--s-2` (4) quando os blocos ganharam caixa: os 24 aqui
+   * SOMAVAM com o `gap` do `.conteudo` e deixavam 36px entre o título e a primeira borda. Com
+   * painéis, o cabeçalho é a única coisa FORA das caixas — a distância dele para a primeira
+   * borda é o vão do protótipo (12) mais um respiro, não o dobro dele. */
+  margin-bottom: var(--s-2);
+  gap: var(--s-4);
+}
+
+/* 🔴 `baseline`, não `flex-start`. Alinhado pelo topo do bloco, o controle da direita
+ * (segmented de período, botão primário) fica pendurado acima da linha de base do título e
+ * o cabeçalho lê como duas coisas empilhadas em alturas diferentes. Pela base, os dois
+ * assentam na mesma linha — que é o que o olho usa pra ler "isto é um cabeçalho só". */
+.linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+}
+
+.textos { min-width: 0; }
+
+/* `page`, hoje 24/600 (o par do protótipo aprovado). Ele já foi 21/500, e a nota de então
+ * dizia que a 24 com peso 500 o título ficava "largo e fino" — o diagnóstico estava certo e a
+ * conclusão, meia. O que resolve o fino é o PESO, não o corpo: a 24/600 com tracking de −.03em
+ * ele assenta e fica sólido.
+ *
+ * A hierarquia também mudou de lugar: com a página sem caixa nenhuma, o título competia com
+ * o KPI (30/500) e perdia de propósito, pra o DADO saltar. Hoje o dado tem uma caixa em volta
+ * que o destaca sozinho, e sobrou pro título o papel de carregar a página — que é o único
+ * texto de fora das caixas. Os dois se moveram um em direção ao outro: 21→24 aqui, 30→29 lá. */
+.titulo {
+  font-size: var(--fs-page);
+  font-weight: 600;
+  line-height: var(--lh-page);
+  letter-spacing: var(--ls-page);
+  color: var(--tinta);
+}
+
+.sub {
+  /* 4px do título, não os 16 do `gap` da página. O subtítulo EXPLICA o título; a distância
+   * entre os dois é o que diz ao olho que são uma coisa só. Solto no gap da página ele
+   * parecia um parágrafo órfão — era a queixa de "o título está bem separado do subtítulo". */
+  margin-top: var(--s-2);
+  /* Medida de leitura: passando disso o olho perde o retorno da linha. */
+  max-width: 68ch;
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* Ações da direita (seletor de funil, botão primário da tela…). `flex-shrink: 0` porque
+ * quem deve ceder espaço é o texto, não o controle. */
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-shrink: 0;
+}

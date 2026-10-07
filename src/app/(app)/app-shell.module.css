@@ -1,0 +1,82 @@
+/* app-shell.module.css — grid do shell logado (kit v2). Rail fixo + coluna main rolável.
+ *
+ * 🔴 O `.shell` É O CHÃO, logo `--fundo` e nunca `--superficie`. Ele é o container mais
+ * externo do app logado: quem pinta um plano em cima dele é cada painel, cartão e drawer.
+ * Trocar os dois aqui apaga a hierarquia inteira de uma vez — tudo vira a mesma cor e nenhum
+ * painel se destaca de nada.
+ *
+ * O histórico que explica o cuidado: enquanto página e sidebar eram o mesmo cinza (#F0F1F3
+ * contra #F0F0F0, um ponto de distância) não existia figura e fundo — a navegação e o
+ * conteúdo dividiam o mesmo plano e a tela lia chapada. A separação não pode voltar a
+ * depender de uma borda de 1px pra existir.
+ *
+ * 🔴 A COLUNA NÃO TEM MAIS TOP BAR (decisão D7 do kit v2). `.coluna` era `barra + main`; hoje
+ * é só `main` no desktop — a `BarraMobile` que abre esta coluna é `display: none` acima de
+ * 1024px e não ocupa altura nenhuma. É daí que saem os 52px de altura útil devolvidos às 23
+ * telas: o conteúdo passa a começar no topo da janela.
+ *
+ * 🔴 O RAIL FLUTUA, e a folga em volta dele mora AQUI. O `padding` do `.shell` é o que
+ * descola o rail das quatro bordas da janela; o `padding-inline-start` da `.coluna` é a folga
+ * entre o rail e o conteúdo. Os dois são `--s-4` (12px), e é essa moldura que faz o rail ler
+ * como painel que pousa sobre a página em vez de faixa colada na borda do monitor.
+ *
+ * ⚠️ `min-height: 100vh` + padding só fecha em 100vh porque o reset global põe
+ * `box-sizing: border-box` em tudo. Sem ele a página nasceria 24px mais alta que a janela e
+ * TODA tela do produto teria barra de rolagem vertical parada, sem nada pra rolar.
+ *
+ * ⚠️ A altura do rail depende deste padding (`calc(100vh - var(--s-6))` no `Rail.module.css`,
+ * onde `--s-6` = 2 × `--s-4`). Mexeu num, mexa no outro — divergindo, o rail passa a sobrar ou
+ * faltar exatamente a diferença, e o sintoma é uma barra de rolagem que aparece só no rail. */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--barra-w) 1fr;
+  min-height: 100vh;
+  background: var(--fundo);
+  padding: var(--s-4);
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-inline-start: var(--s-4);
+}
+
+/* Container ÚNICO do conteúdo. As telas NÃO devem ter `max-width` própria: quem
+ * define a largura útil (e o teto pra não esticar em ultrawide) é esta regra.
+ *
+ * 🔴 O PADDING LATERAL SAIU DAQUI, e é consequência direta da regra de contenção invertida.
+ * Ele valia `--pad-page` (24px) porque o conteúdo era texto solto sobre o chão e precisava de
+ * margem própria. Hoje o conteúdo são PAINÉIS, que já trazem o respiro dentro da borda: 24px
+ * aqui somariam com os 16 de dentro do painel e afastariam o dado da borda em 40px. A folga
+ * externa passa a ser a do `.shell`; o que sobra aqui é o respiro VERTICAL (4px em cima, pra
+ * o cabeçalho não nascer colado, e 12 embaixo).
+ *
+ * 🔴 E o `gap` caiu de `--gutter` (16) pra `--s-4` (12), que é o do protótipo. Painel vizinho
+ * de painel se separa pela borda dos dois; 16px ali abriam vão. */
+.conteudo {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--s-2) 0 var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+@media (max-width: 1024px) {
+  /* `12fr`, não `1fr`: é o corte "bloco de largura cheia" da grade de 12 e o vocabulário
+   * que a barreira de grade do kit conhece — em uma trilha só, o comportamento é
+   * idêntico ao do `1fr` que estava aqui. */
+  .shell {
+    grid-template-columns: 12fr;
+  }
+
+  /* Sem rail no fluxo, a folga da esquerda vira responsabilidade do `.shell` sozinho —
+   * mantê-la aqui dobraria a margem esquerda do celular, onde ela é o recurso mais escasso. */
+  .coluna {
+    padding-inline-start: 0;
+  }
+}

@@ -1,0 +1,781 @@
+/* conversas.module.css — a caixa de entrada de mensagens.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ * ⚠️ ESTA TELA AINDA NÃO FOI REFEITA PARA A REGRA DE CONTENÇÃO DE HOJE. A regra da v0.7.0
+ * (topo do `globals.css`) diz que todo bloco de conteúdo é um PAINEL — superfície, borda,
+ * raio e elevação, os quatro juntos. Aqui não há nenhum: medido nas DECLARAÇÕES deste
+ * arquivo (comentário fora), não existe um `--superficie`, um `--elev-*` nem um `--r-painel`
+ * — só um `--superficie-hover`, que é hover de linha, não plano. As duas colunas seguem
+ * separadas por filete, que era o desenho da regra ANTERIOR. A rodada que reescreveu este
+ * arquivo trocou token morto e vocabulário de controle, e NÃO mexeu no layout — quem fizer
+ * a passada visual decide se as colunas viram painel.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ * A TENSÃO DESTA TELA, E COMO ELA FOI RESOLVIDA
+ *
+ * Uma conversa é feita de balões, que são caixas — e caixa dentro de caixa dentro de caixa
+ * é o defeito que as duas versões da regra de contenção proíbem igual (a de hoje pelo
+ * mesmo motivo pelo qual o cartão do kanban usa `--superficie-alta` DENTRO da coluna: não
+ * repetir o mesmo plano duas vezes).
+ *
+ * A saída não é balão com corpo, borda e sombra. As duas direções se separam por
+ * ALINHAMENTO e por um preenchimento leve em UMA delas:
+ *
+ *   · a mensagem que CHEGA é o conteúdo da tela. Ela vive direto no branco, alinhada à
+ *     esquerda, como qualquer outro conteúdo do produto;
+ *   · a que SAI é a exceção — o que a equipe respondeu — e é ela que ganha o wash de acento,
+ *     alinhada à direita.
+ *
+ * Nenhuma das duas tem borda, sombra ou raio de cartão. O preenchimento aqui não é moldura
+ * de bloco: ele CODIFICA quem falou, do mesmo jeito que um wash semântico codifica um
+ * estado. E a linha micro em caixa alta acima de cada mensagem (quem · quando) resolve o
+ * caso em que duas mensagens curtas de direções opostas ficariam ambíguas só pelo
+ * alinhamento.
+ * ══════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── A região de duas colunas ─────────────────────────────────────────────────────────
+ *
+ * A altura vem da cadeia de flex do shell (a coluna do app já ocupa a janela), nunca de um
+ * `calc()` sobre `vh`: número mágico assim envelhece calado no dia em que o cabeçalho mudar
+ * de altura. `min-height: 0` é o que deixa cada coluna rolar POR DENTRO em vez de esticar a
+ * página — item de flex se recusa a encolher abaixo do conteúdo sem isso.
+ *
+ * O piso de 420px é tamanho de região, não espaçamento: abaixo dele a lista mostraria duas
+ * linhas e a conversa, uma mensagem. */
+.pagina {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Trilha fixa à esquerda, resto para a conversa. É a proporção do objeto: o índice tem
+ * largura de nome + horário e não cresce com a janela; quem cresce é o texto que se lê. */
+.duasColunas {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 420px;
+}
+
+/* O filete fica no MEIO da calha, não colado numa das colunas: colado, ele lê como borda
+ * daquela coluna e a assimetria aparece. Por isso o recuo é igual dos dois lados e a calha
+ * some do `column-gap`. */
+.colunaLista {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--s-6);
+  border-right: 1px solid var(--linha);
+}
+
+/* A coluna da direita é uma PILHA de três: barra, conversa e campo de resposta. Só a do meio
+ * rola — sem isso, responder a uma conversa longa exigiria rolar até o fim para achar o
+ * campo, e a barra de ações sumiria de vista junto. */
+.colunaConversa {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding-left: var(--s-6);
+}
+
+.threadRolagem {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* 🔴 A ANCORAGEM É NOSSA, E ESTA LINHA É QUEM DECIDE ISSO. Quando o histórico entra por
+   * cima, o Chrome compensa a rolagem sozinho (`overflow-anchor: auto` é o padrão dele) e o
+   * Safari não. Com o navegador compensando E o nosso cálculo somando o crescimento, o salto
+   * volta — ao contrário, e só em alguns navegadores. Desligar aqui faz o comportamento ser o
+   * mesmo em todos: o `scrollTop` não se mexe sozinho, e quem o move é a thread. */
+  overflow-anchor: none;
+}
+
+/* O polegar da barra de rolagem é `--linha-forte`, não `--linha`: ele é um OBJETO que se
+ * pega, não um divisor que se repete. No escuro o `--linha` é 7,5% de branco — a 8px de
+ * largura, some. É o mesmo par que o `.board` do kanban já pratica. */
+@supports not selector(::-webkit-scrollbar) {
+  .colunaLista,
+  .threadRolagem {
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-forte) transparent;
+  }
+}
+
+.colunaLista::-webkit-scrollbar,
+.threadRolagem::-webkit-scrollbar {
+  width: 8px;
+}
+.colunaLista::-webkit-scrollbar-track,
+.threadRolagem::-webkit-scrollbar-track {
+  background: transparent;
+}
+.colunaLista::-webkit-scrollbar-thumb,
+.threadRolagem::-webkit-scrollbar-thumb {
+  background: var(--linha-forte);
+  border-radius: var(--r-pill);
+}
+
+/* ── O alternador de conjunto ────────────────────────────────────────────────────────
+ *
+ * Ele fica ACIMA da busca porque é o escopo dela: a busca corre por dentro do conjunto
+ * escolhido. Mesma regra do campo abaixo — a caixa, o chevron e o anel de foco vêm da
+ * `Selecao` (`components/ui/Campo.tsx`); daqui sai só o espaço, que é posicionamento de quem
+ * monta. O espaço é menor que o da busca (`--s-3` contra `--s-4`): os dois controles são um
+ * grupo, e um vão igual entre eles e a lista os leria como dois blocos separados. */
+.filtroLista {
+  margin-bottom: var(--s-3);
+}
+
+/* ── Busca ──────────────────────────────────────────────────────────────────────────── */
+
+/* 🔴 SÓ O ESPAÇO ABAIXO. A caixa, a tinta, o placeholder, o hover e o anel de foco vêm da
+ * `Entrada` (`components/ui/Campo.tsx`) — este arquivo desenhava o campo por conta própria e
+ * com token do kit anterior, que é como a tela chegou aqui. `margin-bottom` é posicionamento
+ * de quem monta, e é a única coisa que continua sendo desta tela. */
+.busca {
+  margin-bottom: var(--s-4);
+}
+
+/* O aviso de que a busca não rodou. A cor e a caixa são as da `.erroAcao` — é o mesmo tipo de
+ * frase, e um segundo desenho para o mesmo papel só criaria dialeto. Esta classe acrescenta só
+ * o que falta: o respiro ABAIXO, porque este é o único uso da `.erroAcao` que tem conteúdo
+ * depois de si (a lista) em vez de terminar o bloco.
+ *
+ * 🔴 ELA NÃO PODE TENTAR SOBRESCREVER NADA DA `.erroAcao`, e é a armadilha deste arquivo: as
+ * duas entram juntas no mesmo `class`, têm a mesma especificidade (0,1,0) e não há `@layer` nem
+ * `composes` — quem vence é a DECLARADA POR ÚLTIMO, e a `.erroAcao` mora ~300 linhas abaixo
+ * desta. A primeira versão desta regra trazia um `margin-top` negativo para colar o aviso no
+ * campo; ele era morto, e o resultado era o afastamento que o comentário dizia estar evitando.
+ * O espaço acima é decidido pela `.erroAcao` (`--s-3`), que colapsa com o `--s-4` do `.busca` e
+ * deixa o aviso a uma distância do campo igual à da lista logo abaixo — que é o que se queria. */
+.erroBusca {
+  margin-bottom: var(--s-4);
+}
+
+/* ── A lista de conversas ───────────────────────────────────────────────────────────── */
+
+.lista {
+  list-style: none;
+}
+
+/* ── O fim da lista ──────────────────────────────────────────────────────────────────
+ *
+ * A caixa de entrada carrega de 30 em 30, e antes desta faixa a 31ª conversa não tinha
+ * caminho nenhum. Ela fica DENTRO da coluna que rola, depois da última linha, porque é ali
+ * que a pergunta nasce — um controle fixo no rodapé responderia antes de alguém perguntar.
+ *
+ * `--s-6` acima e abaixo separa o controle da última linha da lista: colado, ele se lê como
+ * mais uma conversa. */
+.rodapeLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-6) 0;
+}
+
+/* Texto de apoio, não aviso: acabar a lista é o desfecho normal e não pede cor semântica.
+ * Ele só é escrito depois de o operador ter carregado ao menos uma página — sem isso, toda
+ * caixa de entrada pequena carregaria um rodapé respondendo a pergunta que ninguém fez. */
+.fimDaLista {
+  color: var(--tinta-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  text-align: center;
+}
+
+/* Linha inteira clicável, sem caixa e sem raio: o realce é uma tinta de varredura, não um
+ * cartão que aparece no hover. `--h-row` é PISO — com nome e horário em duas trilhas a
+ * linha fecha um pouco acima disso, e é o alvo certo para ela.
+ *
+ * A borda esquerda TRANSPARENTE é régua, não enfeite: sem ela o texto desliza 2px no
+ * momento em que a conversa é aberta e a lista inteira treme. */
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--s-3);
+  width: 100%;
+  min-height: var(--h-row);
+  padding: var(--s-3);
+  border: 0;
+  border-bottom: 1px solid var(--linha);
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+/* `--superficie-hover`, e não `--realce`: os dois herdaram o `--hover` do kit anterior e não
+ * são intercambiáveis. Este é o hover de LINHA DE LISTA sobre o painel, que é a definição
+ * literal do primeiro; o `--realce` é o filete interno de luz do que se eleva, e ele não tem
+ * um único leitor em módulo nenhum do produto. */
+.item:hover {
+  background: var(--superficie-hover);
+}
+
+/* Item aberto: wash de acento e o filete esquerdo aceso. */
+.itemAtivo {
+  background: var(--acento-wash);
+  border-left-color: var(--acento);
+}
+
+.itemAtivo:hover {
+  background: var(--acento-wash);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* A coluna de texto da linha: nome em cima, marcador embaixo quando existe. Empilhar aqui —
+ * em vez de abrir uma terceira trilha na grade — é o que mantém a linha sem marcador com a
+ * mesma silhueta de sempre. */
+.linhaTexto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.nome {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── O marcador de "quem manda nesta conversa" ────────────────────────────────────────
+ *
+ * Subtítulo pela regra do kit: MESMO tamanho do nome, o que separa é a cor. Ponto de 6px
+ * porque cor sozinha não é sinal acessível — o texto ao lado carrega o significado, e o
+ * ponto só o reforça. */
+.marcador {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marcador::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: currentcolor;
+}
+
+/* 🔴 O ÚNICO EM ACCENT, e a distinção é o ponto da tarefa: este estado NÃO expira — só sai
+ * quando alguém devolver a conversa. Os outros dois se resolvem sozinhos (a pausa do
+ * aparelho vence em 30 minutos; a espera acaba quando o time responde), e por isso ficam em
+ * cinza de texto secundário. */
+.marcadorPessoa {
+  color: var(--acento);
+}
+
+.marcadorAparelho,
+.marcadorEspera {
+  color: var(--tinta-3);
+}
+
+/* O carimbo vive na mesma linha do marcador e no mesmo tom — ele qualifica o texto, não
+ * compete com ele. Tabular porque a coluna de horários se compara de relance. */
+.marcadorDesde {
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A frase que explica o número no lugar do nome (o contato do Instagram sem nome liberado).
+ *
+ * 🔴 MESMO TAMANHO DO NOME, e o que separa é a COR — a regra do kit para subtítulo de linha.
+ * Um quarto tamanho aqui seria o 12px que o v2 nasceu apagando, e um quarto tom de cinza é
+ * proibido: `--tinta-3` é o piso legível.
+ *
+ * ⚠️ E ela NÃO trunca, ao contrário do nome e do marcador logo acima. Os dois são rótulos —
+ * cortados, continuam identificando a linha. Esta é uma explicação: cortada, ela vira mais um
+ * pedaço de texto sem sentido ao lado de um número sem sentido, que é exatamente o estado que
+ * ela existe para desfazer. `--h-row` é PISO de altura, então a linha cresce e nada quebra. */
+.explicacaoNome {
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 400;
+  color: var(--tinta-3);
+}
+
+/* Tabular porque os horários se comparam em coluna: sem isso os dígitos não alinham. */
+.quando {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Badge de contagem: pílula, micro, sobre a moldura. Aqui ele é o único número da lista, e
+ * ainda assim não fica em cor de alerta — não-lida é fila de trabalho, não erro. */
+.naoLidas {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--acento-wash);
+  color: var(--acento);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* ── O aviso de silêncio ─────────────────────────────────────────────────────────────
+ *
+ * Wash de atenção, não caixa: a cor É o conteúdo. E o texto manda conferir em vez de
+ * afirmar — o que se sabe observar é o silêncio, não a queda da conexão. */
+.avisoConexao {
+  margin-bottom: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-controle);
+  background: var(--aviso-wash);
+  color: var(--aviso);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+/* ── A barra da conversa aberta ───────────────────────────────────────────────────────
+ *
+ * Sem caixa: rótulo, filete e respiro. O nome de quem está do outro lado é o único texto
+ * escuro aqui — os controles são secundários por definição, e um deles em cor cheia
+ * competiria com a mensagem, que é o conteúdo da tela.
+ *
+ * Ela não rola com a conversa (`flex: 0 0 auto`): quem está lendo o histórico continua
+ * enxergando de quem é a conversa e onde estão as saídas. */
+.barraConversa {
+  flex: 0 0 auto;
+  padding-bottom: var(--s-3);
+  margin-bottom: var(--s-4);
+  border-bottom: 1px solid var(--linha);
+}
+
+/* Envolve o título e o grupo de controles: eles se separam nas pontas e QUEBRAM em duas
+ * linhas quando a coluna aperta — em vez de espremer o nome do contato até virar reticência. */
+.barraLinha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.tituloConversa {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  font-weight: 500;
+  color: var(--tinta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 🔴 ELA QUEBRA, e sem isso a barra TRANSBORDA no celular — relatado com medição, a 360 px.
+ *
+ * A `.barraLinha` acima já quebrava, e foi isso que escondeu o defeito: o título desce para a
+ * primeira linha e o grupo de controles para a segunda, então de longe parece que a barra se
+ * adapta. Só que o grupo em si era `flex` sem `wrap`, e o conteúdo dele não cabe em coluna
+ * estreita nenhuma: o rótulo, um seletor de até 180 px e ATÉ TRÊS botões com ícone e texto
+ * ("Devolver ao assistente" sozinho passa dos 180 px). Sem quebrar, ele estoura a coluna e
+ * empurra rolagem horizontal para a página inteira — e o que sai da tela é o fim da fila, que
+ * é justamente onde mora o Arquivar.
+ *
+ * ⚠️ O `flex-wrap` SOZINHO é o conserto, e esta linha já afirmou o contrário. Ela dizia que um
+ * `min-width: 0` no seletor era "o par obrigatório", porque item de flex nasce com
+ * `min-width: auto` e se recusa a encolher abaixo do próprio conteúdo — verdade sobre flexbox, e
+ * irrelevante aqui: a `.controle` (`components/ui/Campo.module.css`) já declara `min-width: 0`, e
+ * é ela que o `Selecao` põe em toda instância. Declarar de novo não mudava um pixel, e o
+ * comentário ensinava a procurar a causa no lugar errado. Os 180 px continuam sendo só o TETO —
+ * o motivo está na `.selecaoAtribuir`. */
+.barraAcoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* Rótulo do seletor: micro em caixa alta, o único tamanho que o produto reserva para
+ * rótulo — assim ele nunca compete com o nome ao lado. */
+.rotuloAtribuir {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+/* O grosso da aparência do `select` (chevron, appearance, altura) vem da `Selecao`
+ * (`components/ui/Campo.tsx`); aqui só entra o teto de largura, que é desta tela: um e-mail
+ * longo esticaria a barra inteira.
+ *
+ * ⚠️ DESDE A v0.7.0 ELE NÃO É MAIS DIMENSIONADO PELO CONTEÚDO: a `.controle` traz `width: 100%`,
+ * então o seletor encosta neste teto e fica em 180px fixos (só encolhe quando a barra aperta).
+ * É mudança de layout, e ela FICA: o valor deste seletor muda exatamente quando alguém assume a
+ * conversa, e com largura de conteúdo os três botões à direita saltariam de lugar no instante do
+ * clique — "Ninguém" e um nome completo têm larguras bem diferentes. Em repouso ele fica com
+ * folga; o preço é esse, e a barra não pula. */
+.selecaoAtribuir {
+  max-width: 180px;
+}
+
+/* ── Botões ───────────────────────────────────────────────────────────────────────────
+ *
+ * 🔴 NÃO EXISTEM MAIS AQUI, e não devem voltar. Este arquivo trazia `.botaoSec` e
+ * `.botaoPrimario` — a receita do secundário e a do primário copiadas à mão, com a frase
+ * "ainda não há componente de botão no produto" por cima. Há: `components/ui/Botao.tsx`, da
+ * v0.7.0. As três ações da barra e o Enviar do compositor passaram a ser `<Botao>`.
+ *
+ * A cópia do primário (`background: var(--acento)` + `color: var(--tinta-invertida)`) é a
+ * assinatura que a barreira `vocabulario-de-controle` reprova por nome — enquanto ela usava
+ * o token MORTO (`--accent`/`--ink-invertido`) a barreira não a reconhecia, e renomear sem
+ * migrar teria acendido um achado novo em vez de fechar um. Renomeação cega não é migração.
+ *
+ * ── O erro de uma ação ───────────────────────────────────────────────────────────────
+ *
+ * Wash semântico, não caixa: aqui a cor É o conteúdo. Ele fica ONDE a ação foi disparada —
+ * um toast no canto oposto obrigaria a procurar a explicação do que acabou de não acontecer. */
+.erroAcao {
+  margin-top: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-controle);
+  background: var(--erro-wash);
+  color: var(--erro);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+/* 🔴 A IRMÃ DA `.erroAcao`, E A COR É A DIFERENÇA INTEIRA. Ela existe para a ação que DEU
+ * CERTO e cuja tela ficou para trás: a escrita foi gravada, o assistente já foi calado. Numa
+ * faixa vermelha essa frase é lida como falha antes da primeira palavra — a cor é
+ * pré-atentiva e o texto não é —, e é a leitura errada que faz o atendente repetir a ação ou
+ * avisar o cliente. Os tokens são os mesmos da `.avisoJanela` mais abaixo, com o contraste já
+ * medido nos dois temas em `globals.css`. */
+.avisoAcao {
+  margin-top: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-controle);
+  background: var(--aviso-wash);
+  color: var(--aviso);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+/* ── O topo da conversa ──────────────────────────────────────────────────────────────
+ *
+ * A thread traz as 50 últimas mensagens e o resto vem por cursor. O controle fica ACIMA da
+ * mensagem mais antiga, que é para onde quem procura o começo da conversa rola — e é ali
+ * que o conteúdo carregado aparece, logo abaixo dele.
+ *
+ * ⚠️ Carregar aqui PREPENDA conteúdo, e prepender empurra o que está sendo lido para baixo.
+ * Enquanto não houver âncora de rolagem segurando a posição, o salto é o preço conhecido de
+ * ver o histórico. */
+.topoDaThread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  align-items: center;
+  padding-bottom: var(--s-5);
+}
+
+/* Mesmo papel do `.fimDaLista`, um degrau abaixo: texto de apoio, sem cor semântica, e só
+ * depois de o operador ter pedido o histórico ao menos uma vez. */
+.inicioDaConversa {
+  color: var(--tinta-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  text-align: center;
+}
+
+/* ── A conversa ─────────────────────────────────────────────────────────────────────── */
+
+.thread {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding-bottom: var(--s-5);
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: 62ch;
+}
+
+/* O alinhamento é metade do sinal de direção; o preenchimento é a outra metade. */
+.msgEntrada {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.msgSaida {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+/* Quem falou e quando, em micro CAIXA ALTA — o único tamanho que o produto reserva para
+ * rótulo, e por isso ele nunca compete com o texto da mensagem. */
+.msgMeta {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.msgFalhou {
+  color: var(--erro);
+}
+
+/* O MOTIVO da falha, ao lado do ` · falhou` e nunca no lugar dele.
+ *
+ * 🔴 FORA DO BALÃO, de propósito. O balão de saída tem fundo `--acento-wash`, e texto em
+ * `--erro` sobre wash de acento é um par de cor que ninguém mediu; aqui ele fica no MESMO
+ * fundo do `.msgMeta`, que já pinta `--erro` na falha — o contraste é o que a tela já tinha.
+ * E semanticamente ele é uma nota sobre a mensagem, não conteúdo dela: o cliente nunca
+ * recebeu este texto.
+ *
+ * `anywhere` porque o motivo pode carregar um endereço colado sem espaço, e sem isto ele
+ * estoura a coluna e leva a página junto — mesma razão do `.texto`.
+ *
+ * ⚠️ ORDEM DE LEITURA, REGISTRADA E NÃO VERIFICADA EM NAVEGADOR: ele fica ENTRE a linha de meta
+ * e o balão, ou seja o atendente lê o motivo ANTES do texto que falhou. É coerente com o layout
+ * (a meta já vem acima do balão) e mantém motivo e status colados, mas numa thread com várias
+ * falhas seguidas o padrão vira motivo→mensagem→motivo→mensagem, e ninguém olhou isso em tela. */
+.msgErro {
+  margin-top: var(--s-1);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--erro);
+  overflow-wrap: anywhere;
+}
+
+/* ── A nota de sistema ──────────────────────────────────────────────────────────────
+ *
+ * 🔴 ELA NÃO É UM BALÃO, E ESSA É A DECISÃO INTEIRA. O que ela carrega é a marca que a caixa
+ * de entrada escreve quando o assistente NÃO respondeu — texto nosso, que o cliente nunca
+ * recebeu. Desenhada como `.msgSaida` (à direita, com wash de acento e o rótulo IA em cima),
+ * ela era indistinguível de uma mensagem entregue, e o chamado que nascia disso era "o CRM
+ * mandou isso para o meu cliente?".
+ *
+ * Centrada e sem preenchimento: o eixo horizontal é o que a thread usa para dizer QUEM falou,
+ * e o meio é o único lugar que não afirma nem um nem outro. */
+.notaDoSistema {
+  align-self: center;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  max-width: 62ch;
+  text-align: center;
+}
+
+/* Mesmo micro CAIXA ALTA do `.msgMeta` — é o mesmo papel (quem falou e quando), e um segundo
+ * tamanho aqui leria como uma terceira categoria de linha. */
+.notaDoSistemaMeta {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* `--tinta-2` e não `--tinta`: a nota é sobre a conversa, não conteúdo dela. Um degrau abaixo
+ * do texto das bolhas é o que a mantém legível sem competir com o que o cliente escreveu. */
+.notaDoSistemaTexto {
+  color: var(--tinta-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+/* A que CHEGA: sem preenchimento, sem borda, sem raio. Ela é o conteúdo da tela. */
+.balao {
+  min-width: 0;
+}
+
+/* A que SAI: wash de acento. Não é moldura de bloco — é a tinta que diz quem falou.
+ *
+ * 🔴 `--r-controle` (10px) e NÃO `--r-painel` (14px), que é para onde o `--r-region` do kit
+ * morto aponta em geral. `--r-painel` é o raio de CARTÃO, e o parágrafo logo abaixo diz que o
+ * balão não pode ter raio de cartão — é a decisão inteira da tela.
+ *
+ * E `--r-controle` é o que os irmãos deste arquivo (`.avisoConexao`, `.erroAcao`,
+ * `.avisoJanela`) já usam. Medido em TODOS os módulos do produto, regra a regra: dos blocos
+ * com fundo `*-wash` e raio declarado, os que carregam TEXTO usam `--r-controle` (12 fora
+ * daqui: automações, config, _crm, relatórios, importar, funis, campos, kanban); os quatro em
+ * `--r-pill` são pílula/badge e os dois em `--r-painel` são o tile de ícone de 40px do
+ * `EstadoVazio` — nenhum é faixa de texto. Dar ao balão um raio diferente dos irmãos do
+ * próprio arquivo seria incoerência sem motivo medido. */
+.balaoSaida {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-controle);
+  background: var(--acento-wash);
+}
+
+/* 🔴 `pre-wrap` porque a quebra de linha que a pessoa digitou É conteúdo, e sem isto a
+ * mensagem inteira vira um parágrafo só. `anywhere` porque um endereço longo colado sem
+ * espaço estoura a coluna e leva a página junto. */
+.texto {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.legenda {
+  margin-top: var(--s-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A imagem se ajusta à coluna e nunca ao contrário; `--r-pequeno` porque ela é uma miniatura
+ * de conteúdo, não uma região. */
+.midiaImagem {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--r-pequeno);
+}
+
+/* Enquanto o arquivo não chegou (ou não vai chegar), o lugar dele diz o que houve em vez de
+ * ficar vazio: um retângulo mudo é indistinguível de mensagem perdida. */
+.midiaNota {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+/* ── O campo de resposta ──────────────────────────────────────────────────────────────
+ *
+ * Filete em cima e respiro: ele é o rodapé da coluna, não um cartão colado nela. Fica fora
+ * da região que rola (`flex: 0 0 auto`) porque responder é a ação principal desta tela —
+ * procurá-la rolando até o fim de uma conversa de meses seria o oposto disso. */
+.compositor {
+  flex: 0 0 auto;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--linha);
+}
+
+/* ── A janela de 24 horas do WhatsApp oficial ─────────────────────────────────────────
+ *
+ * DOIS PESOS, e a diferença é a mesma que separa "há uma decisão a tomar" de "saiba disto".
+ *
+ * `.avisoJanela` é wash de atenção, irmão do `.avisoConexao`: a janela fechou, e o atendente
+ * precisa decidir se tenta assim mesmo. `.notaJanela` é texto miúdo sem caixa nenhuma — a
+ * janela está aberta, não há nada a fazer, e a frase existe só para não deixar o compositor
+ * habilitado prometer sozinho que o envio vai funcionar.
+ *
+ * 🔴 NENHUM DOS DOIS MEXE NO CAMPO NEM NO BOTÃO. Não há `opacity` no `.compositorLinha`, não
+ * há `pointer-events: none`: desabilitar por CSS seria o mesmo bloqueio que o `.tsx` recusa,
+ * só que invisível para a barreira que lê o `.tsx`. */
+.avisoJanela {
+  margin-bottom: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-controle);
+  background: var(--aviso-wash);
+  color: var(--aviso);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.notaJanela {
+  margin-bottom: var(--s-3);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* O botão acompanha a ALTURA do campo (`align-items: stretch` implícito não serve: ele
+ * esticaria junto). Alinhado no fim, ele fica na linha de base da última linha digitada. */
+.compositorLinha {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+}
+
+/* 🔴 SÓ O COMPORTAMENTO NA LINHA. A caixa, a tinta, o `resize: vertical`, o desabilitado e o
+ * anel de foco vêm da `AreaTexto` (`components/ui/Campo.tsx`); este arquivo desenhava tudo
+ * isso à mão com token do kit anterior. O que sobra é o que a `AreaTexto` não pode saber: que
+ * aqui ela divide uma linha com o botão de enviar e é ela quem estica.
+ *
+ * ⚠️ A altura de repouso passa a ser a da `AreaTexto` (88px, ~quatro linhas), e é a altura de
+ * todo campo de texto longo do produto — a mesma do compositor de atividade. Foi por isso que
+ * o `rows={2}` saiu do `.tsx`: ele nunca teve efeito nenhum contra este `min-height`, e número
+ * na fonte que a tela não honra engana quem for mexer depois. */
+.campoResposta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ── Abaixo de 1024px ────────────────────────────────────────────────────────────────
+ *
+ * As duas colunas não cabem: em 360px a lista ficaria com o que sobra de 320 e a conversa
+ * com nada. Elas empilham, o filete vertical vira horizontal e a lista deixa de rolar por
+ * dentro — quem rola é a página. */
+@media (max-width: 1024px) {
+  .duasColunas {
+    grid-template-columns: 12fr;
+    min-height: 0;
+  }
+
+  .colunaLista {
+    overflow-y: visible;
+    padding-right: 0;
+    padding-bottom: var(--s-6);
+    border-right: 0;
+    border-bottom: 1px solid var(--linha);
+  }
+
+  .colunaConversa {
+    padding-left: 0;
+    padding-top: var(--s-6);
+  }
+
+  /* Empilhadas, quem rola é a página: uma região rolável dentro de outra, no celular, é a
+   * armadilha de arrastar e nada se mexer. */
+  .threadRolagem {
+    overflow-y: visible;
+  }
+}

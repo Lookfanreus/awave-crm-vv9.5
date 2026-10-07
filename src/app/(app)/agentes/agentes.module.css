@@ -1,0 +1,711 @@
+/* agentes.module.css — /agentes (Agentes, Atendimento, Servidor).
+ *
+ * As classes abaixo são CÓPIA DECLARADA das de `../config/config.module.css` — mexeu lá,
+ * confira aqui, e vice-versa: `.abas`/`.aba`/`.abaAtiva`, `.bloco`/`.blocoCab`/`.blocoTitulo`/
+ * `.blocoMeta` e `.frase` são a MESMA receita que `/config` já usa pro índice em abas, pro
+ * painel e pro caminho de erro. Nomes diferentes pro mesmo objeto é como duas telas irmãs
+ * passam a discordar sobre o que é uma aba — por isso os nomes aqui são os MESMOS, não uma
+ * variação.
+ *
+ * ⚠️ `.pagina` é a EXCEÇÃO declarada — ela NÃO copia a largura do `/config` (ver logo
+ * abaixo), só a estrutura de coluna.
+ *
+ * 🔴 AS SUB-TELAS ESCREVEM AQUI EMBAIXO, cada uma na sua seção — `ListaDeAgentes`,
+ * `NumerosDoEspaco`, `Atendimento` e `Servidor`. Acrescentar é o caminho natural: não abra um
+ * segundo `.module.css` pra elas. */
+
+/* 🔴 `--content-max` (1440px), NÃO os 760px do `/config` — a primeira versão desta tela
+ * herdou os 760 do `/config` por engano. A razão do 760 está escrita na ORIGEM
+ * (`config.module.css`) e é sobre OUTRA coisa: "estas três telas são formulário e lista de
+ * duas colunas" (equipe, tipos de atividade, a tela antiga do assistente) — a 1150px o nome
+ * de um membro ficava a meia tela do papel dele. A aba Agentes não é isso: é uma LISTA DE
+ * CARTÕES LARGOS, cada um com uma linha de metadados (onde atende · entradas da base). A
+ * 760px essa linha quebra em várias linhas e desfaz a densidade que o cartão existe para
+ * dar — o protótipo aprovado pelo dono usa a largura cheia. Não "restaure" o 760 aqui: ele
+ * resolve um problema que esta aba não tem. */
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  max-width: var(--content-max);
+}
+
+/* ── As abas ──────────────────────────────────────────────────────────────────────────
+ *
+ * MESMA RECEITA do `.periodo` do painel, do `.segmentado` de `/config/campos` e do
+ * `.filtro` da agenda: trilho `--trilho`, item ativo em `--superficie` com borda
+ * `--linha-forte`, NUNCA azul sólido — o produto já tem um jeito de dizer "qual recorte
+ * estou vendo", e é este. `flex-wrap` porque os três rótulos são palavras inteiras e a
+ * página roda em telas estreitas — bem abaixo do teto de `--content-max` (1440px) desta
+ * tela: rótulo cortado numa aba é a pessoa não saber pra onde está indo. */
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+  /* Encolhe até o conteúdo em vez de esticar pelo teto largo desta página (`--content-max`,
+   * 1440px): o grupo é um controle, não um cabeçalho de região. */
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.aba,
+.abaAtiva {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.aba { color: var(--tinta-3); }
+.aba:hover { color: var(--tinta); }
+
+.abaAtiva,
+.abaAtiva:hover {
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+
+/* Foco: o teclado é a ÚNICA forma de usar as abas sem ponteiro. Sem esta regra elas
+ * cairiam no anel padrão do navegador, que muda de navegador e não é o do produto. */
+.aba:focus-visible,
+.abaAtiva:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* ── O bloco: a receita ÚNICA do produto (painel) ─────────────────────────────────────
+ *
+ * Idêntica à de `_crm/crm.module.css`, `config.module.css` e à do `.blocoTopo` de
+ * `relatorios`/`automacoes`. Usada aqui no caminho de erro, na lista de números da aba
+ * Agentes e nas abas Atendimento e Servidor. */
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  /* O corpo; o `.blocoCab` traz o respiro de cima. */
+  padding: 0 var(--s-5) var(--s-5);
+}
+
+/* Cabeçalho do painel. O recuo negativo devolve o cabeçalho à borda da caixa, e o
+ * `min-height: var(--h-control)` garante que um bloco só com texto feche na mesma altura
+ * do vizinho que carrega um controle de 32px. */
+.blocoCab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+  min-height: var(--h-control);
+  margin-inline: calc(var(--s-5) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+/* Rótulo de bloco. 13/600 `--tinta`, sem ícone — mesma decisão do `.blocoTitulo` de
+ * `config.module.css` e do `_crm`. */
+.blocoTitulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+/* O escopo à direita do rótulo — mesma receita do `.meta` do ListCard.
+ *
+ * 🔴 LOAD-BEARING NESTA TELA, não decoração: é o que impede a chave da instalação (aba
+ * Servidor) de parecer per-workspace embaixo do seletor de workspace no topo do rail.
+ * `44ch` porque "Vale para todos os espaços de trabalho deste servidor." não cabe numa
+ * linha só em telas médias, e `nowrap` a empurraria pra fora da tela. */
+.blocoMeta {
+  margin-left: auto;
+  max-width: 44ch;
+  text-align: right;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Texto corrido ────────────────────────────────────────────────────────────────────
+ *
+ * A frase de estado (o caminho de erro): é o que a pessoa lê primeiro no bloco, então
+ * fica em `--tinta`. Não é título — não ganha peso de título. */
+.frase {
+  max-width: 68ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+/* ── Aba Agentes: a lista de cartões ───────────────────────────────────────────────────
+ *
+ * Vocabulário NOVO, não copiado de `/config` — lá a lista de assistentes era uma pilha de
+ * `<li>` dentro de UM painel; aqui cada agente É o painel, e ele se abre num editor. O
+ * protótipo aprovado pelo dono é a referência visual; os nomes de classe abaixo são os
+ * dele, adaptados aos tokens reais (conferidos por diff contra o protótipo — são os
+ * mesmos). */
+
+.cabecalhoLista {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lista {
+  display: grid;
+  gap: var(--s-3);
+}
+
+/* Um agente fechado cabe em ~72px — é a linha compacta que despolui a tela antiga, onde os
+ * três fatos eram três células empilhadas. */
+.agente {
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: inset 0 1px 0 var(--realce);
+  overflow: hidden;
+  transition: border-color var(--t-rapido) var(--suave);
+}
+
+.agenteAberto {
+  border-color: var(--acento-linha);
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+}
+
+.agenteIcone {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--acento-wash);
+  color: var(--acento);
+  border: 1px solid var(--acento-linha);
+  border-radius: var(--r-controle);
+}
+
+.corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.tituloLinha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.tituloAgente {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--tinta);
+}
+
+/* Os fatos do agente (onde atende · entradas da base), agora em uma linha só — não três
+ * células empilhadas. As frases vêm inteiras de `quem-responde.ts` (não é o fragmento curto
+ * do protótipo): esta linha aceita quebrar em telas estreitas, `flex-wrap` cuida disso. */
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-2);
+  color: var(--tinta-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.sep {
+  opacity: 0.5;
+}
+
+.acoesLinha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+/* O editor — abre dentro do agente, um por vez (`ListaDeAgentes` controla o `aberto`). */
+.editor {
+  border-top: 1px solid var(--linha-forte);
+  background: var(--superficie-alta);
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.editorTitulo {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--s-5);
+}
+
+.campoLargo {
+  grid-column: 1 / -1;
+}
+
+/* O contador de caracteres do "sobre o negócio" — mesma receita de
+ * do módulo da tela que ela substituiu, que este arquivo não pode importar (módulo próprio). */
+.contador {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+.contadorCheio {
+  composes: contador;
+  color: var(--erro);
+}
+
+/* O bloco do interruptor Ligar/Desligar: botão + o motivo do cinza (quando houver) + o
+ * aviso de dado indo para a OpenAI, empilhados — nunca lado a lado, senão o motivo em frase
+ * completa espreme o botão numa lista de cartões que já é estreita em telas médias. */
+.blocoLigar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-2);
+}
+
+/* 🔴 O AVISO FICA AO LADO DO BOTÃO DE LIGAR, e não numa página à parte: aviso que não está
+ * no momento da decisão não é aviso, é arquivo. Ele diz o que passa a acontecer com o
+ * conteúdo das conversas — inclusive o que os clientes escrevem — no instante em que
+ * alguém liga. */
+.avisoOpenAi {
+  margin: 0;
+  padding: var(--s-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--aviso);
+  background: var(--aviso-wash);
+  border-radius: var(--r-controle);
+}
+
+.ajuda {
+  max-width: 68ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.erro {
+  max-width: 68ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--erro);
+  background: var(--erro-wash);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+}
+
+.confirmacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.editorPe {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.cresce {
+  flex: 1;
+}
+
+/* O painel de criação ("Novo agente"), fora de qualquer cartão — mesma pele do `.editor`,
+ * só que com borda nos quatro lados em vez de só em cima. */
+.painelNovo {
+  background: var(--superficie-alta);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* ── Aba Atendimento: horário + custo ──────────────────────────────────────────────────
+ *
+ * `.campo`/`.rotulo` são CÓPIA DECLARADA das de `../config/config.module.css` (mesma
+ * receita da nota do topo do arquivo) — a aba Agentes não precisava delas porque usa o
+ * componente `Campo` de `@/components/ui/Campo`; esta aba porta o formulário do horário
+ * tal como ele já existia na tela que esta aba substituiu, inclusive o rótulo sem
+ * `htmlFor` de "Dias e horários" (não há um controle único para apontar). */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.rotulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-2);
+}
+
+/* O estado de agora, calculado no servidor. Sem cor própria: ele NÃO é alerta — fora do
+ * horário o assistente continua respondendo, e pintar isso de vermelho ensinaria o
+ * contrário do que a frase diz. */
+.estadoAgora {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+/* Uma linha por dia da semana, sempre as sete. A tabela é fixa de propósito: derivar as
+ * linhas dos dias abertos faria o dia fechado sumir da tela, e não haveria onde clicar
+ * para abri-lo.
+ *
+ * A caixinha de marcar é pintada pelo `accent-color` daqui — a mesma decisão que o resto
+ * do produto toma para `checkbox`, que não tem caixa nossa para carregar. */
+.dias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  accent-color: var(--acento);
+}
+
+.dia {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Largura fixa para os sete nomes alinharem as caixas de hora numa coluna só. "Segunda-feira"
+ * é o mais longo, e é ele que define a medida. */
+.diaNome {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 11rem;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+.diaHoras {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.diaAte {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.horaCampo {
+  width: 7.5rem;
+}
+
+/* Os quatro números do mês. Colunas iguais por `repeat`, com divisor entre irmãos — o
+ * mesmo desenho da faixa de indicadores do painel. */
+.faixaCusto {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gutter);
+  margin-top: var(--s-4);
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--linha);
+}
+
+.faixaCusto > * + * {
+  padding-left: var(--gutter);
+  border-left: 1px solid var(--linha);
+}
+
+.rotuloCusto {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+.valorCusto {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-metric);
+  line-height: var(--lh-metric);
+  letter-spacing: var(--ls-metric);
+  font-weight: 500;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* O valor em dólar do total parcial não cabe em 30px quando ganha o prefixo "cerca de". */
+.valorCustoLongo {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+}
+
+.notaCusto {
+  margin: var(--s-4) 0 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* O recorte por espaço de trabalho: uma linha por espaço, sem caixa. NÃO é o `.lista` da
+ * aba Agentes (aquele é grid, para cartões) — nomes iguais para objetos diferentes
+ * discordariam na primeira mudança de um dos dois. */
+.listaCusto {
+  list-style: none;
+}
+
+.linhaCusto {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: 8px 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  border-bottom: 1px solid var(--linha);
+}
+
+.linhaCusto:last-child { border-bottom: 0; }
+
+.linhaCustoValor {
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Aba Servidor: a chave e o modelo ──────────────────────────────────────────────────
+ *
+ * `.linhaForm` e `.vazio` são CÓPIA DECLARADA das de `../config/config.module.css` (mesma
+ * receita da nota do topo do arquivo) — esta aba porta o bloco "A conta que paga as
+ * respostas" tal como ele já existia na tela que esta aba substituiu. `.campo`/`.rotulo`
+ * não entram aqui: o formulário usa o componente `Campo` de `@/components/ui/Campo`, que já
+ * traz os dois embutidos. */
+
+/* Controles lado a lado (input + botão) — `.campo` (rótulo + controle) é o `Campo` do
+ * componente, não uma classe deste módulo. */
+.linhaForm {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+/* A frase de quem não tem autoridade para ver o formulário. */
+.vazio {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  padding: var(--s-3) 0;
+}
+
+/* ── A tesoura por conversa ────────────────────────────────────────────────────────────
+ *
+ * O parágrafo que ensina a calar o assistente numa conversa específica. Ele fecha a aba,
+ * DEPOIS da lista, e a posição é a razão de ele existir: essa é a única saída de quem
+ * administra o espaço de trabalho e NÃO pode desligar o número (desligar é de quem instalou
+ * o CRM), então ela tem de ficar onde a pessoa acabou de ver o interruptor cinza para ela.
+ *
+ * A linha de cima é o que o separa dos cartões: sem ela, o texto lê-se como legenda do
+ * último agente da lista, e ele fala de TODOS. */
+.tesoura {
+  max-width: 68ch;
+  margin-top: var(--s-2);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--linha);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* ── "Onde cada número responde": a lista de NÚMEROS da aba Agentes ────────────────────
+ *
+ * O eixo inverso da lista de cartões. Ela existe porque `canais.agente_id` NULO é o estado
+ * normal, e um número sem atribuição não aparece em cartão nenhum — some do produto, e com
+ * ele some o interruptor Desligar. Ver o docblock de `NumerosDoEspaco.tsx`.
+ *
+ * A receita é a de `.item`/`.itemInfo`/`.acoes` do `config.module.css`, com os nomes deste
+ * arquivo: linha com informação à esquerda e controles à direita, quebrando para baixo em
+ * tela estreita. */
+.numeros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.numero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--linha);
+}
+
+.numero:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.numeroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+  /* Cresce para empurrar os controles à direita, e encolhe antes deles quando falta espaço. */
+  flex: 1 1 22rem;
+}
+
+.numeroTitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.numeroNome {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.numeroAcoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+/* ── Destinos: os cartões de link para outra tela ──────────────────────────────────────
+ *
+ * CÓPIA DECLARADA de `../config/config.module.css` (`.destinos` e família) — mexeu lá,
+ * confira aqui. Aqui há um destino só (Testar o assistente), mas a grade de duas colunas
+ * fica: ela é a mesma receita, e um segundo destino não pode exigir reescrever o CSS. */
+.destinos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--s-6);
+  row-gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+@media (max-width: 720px) {
+  .destinos { grid-template-columns: minmax(0, 1fr); }
+}
+
+.destino {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-controle);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.destino:hover { background: var(--superficie-hover); }
+
+/* `--icone-mudo` é permitido: o ícone tem o nome do destino escrito ao lado, que é a única
+ * condição em que ele vale. */
+.destinoIcone {
+  flex-shrink: 0;
+  color: var(--icone-mudo);
+  /* Alinha o traço do ícone com a primeira linha de texto (13/1,45 = 19px de caixa). */
+  margin-top: var(--s-1);
+}
+
+.destinoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.destinoNome {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.destinoSub {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* Ocupa o espaço o tempo todo (sem reflow no hover) e só ganha opacidade quando o ponteiro
+ * entra — mesma receita do `.relSeta` do `_crm`. */
+.destinoSeta {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-top: var(--s-1);
+  color: var(--icone-mudo);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--t-rapido) var(--suave), transform var(--t-rapido) var(--mola);
+}
+
+.destino:hover .destinoSeta,
+.destino:focus-visible .destinoSeta {
+  opacity: 1;
+  transform: none;
+}
+
+/* O anel do produto, e não o do navegador — mesma regra que as abas já carregam acima. */
+.destino:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

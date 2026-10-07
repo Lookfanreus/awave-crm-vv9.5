@@ -1,0 +1,839 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+
+/* kanban.module.css — o board de /negocios. Kit v2 — a rodada que redesenha o layout.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 A COLUNA É UM PAINEL, e a distinção com a caixa que morreu aqui uma vez é o assunto.
+ *
+ * O que morreu, e continua morto: o POÇO. Coluna em `--trilho` (cinza afundado) com cartões
+ * brancos dentro — o desenho do Trello de 2011, sobre o qual o dono disse *"parece que vc tá
+ * programando com PHP aqui de tão feio"*. A resposta da época foi tirar TUDO: sem
+ * preenchimento, sem borda, sem raio, raia separada da vizinha por um filete no meio da
+ * calha. Isso resolveu o poço e criou o defeito oposto — cinco pilhas de cartão sobre a
+ * página, sem nada dizendo onde uma etapa acaba e a outra começa a não ser um fio de 1px.
+ *
+ * O painel do protótipo aprovado não é o poço de volta, e a diferença é de DIREÇÃO: o poço
+ * AFUNDA (superfície mais escura que a página, no escuro e no claro), o painel LEVANTA
+ * (`--superficie` sobre `--fundo`, com borda de 1px, raio 14 e `--elev-1`). Uma coluna que
+ * levanta lê como região de trabalho; uma que afunda lê como buraco onde as coisas caem.
+ *
+ * O que sai junto: o filete de 1px no meio da calha, porque agora há duas bordas de verdade
+ * separando as raias, e três linhas para uma separação é ruído.
+ * O que fica: a BARRA DE 2px na cor da etapa sob o cabeçalho — cinco barras coloridas
+ * atravessando o topo do board desenham o funil como SEQUÊNCIA, que é o que um funil é.
+ *
+ * 🔴 E o cartão desce um plano: ele passa a ser `--superficie-alta` DENTRO da coluna, não
+ * `--superficie` como ela. Branco sobre branco some — no claro `--superficie-alta` é mais
+ * ESCURA que a superfície, e é assim que o protótipo resolve o plano aninhado. Cartão da
+ * mesma cor do painel que o contém é o mesmo defeito do poço, com a mão trocada.
+ * ══════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── A região do board ────────────────────────────────────────────────────────────────
+ *
+ * 🔴 `flex: 1 1 auto` + `min-height: 0` É O CONSERTO DO VAZIO MORTO, e é a razão de ele ser
+ * seguro AGORA e não antes.
+ *
+ * Medido em 1440×900 antes deste redesenho: board de 399px numa janela de 900, com 386px de
+ * branco abaixo dele — 43% da tela sem nada, e uma barra de rolagem horizontal boiando no
+ * meio da página em y≈510, que é o que faz um scrollbar parecer defeito em vez de controle.
+ *
+ * A A9 tinha TIRADO um `min-height: calc(100vh - 230px)` daqui, com o comentário "não
+ * devolva um mínimo baseado em vh — ele volta a inventar altura que ninguém pediu". Aquele
+ * aviso continua certo PARA O QUE ELE DESCREVIA: com o poço cinza, esticar a coluna
+ * significava pintar 500px de cinza vazio. A objeção era ao CINZA VISÍVEL, não à altura.
+ * ⚠️ Com a coluna virando painel, esticar volta a custar tinta — mas custa a tinta CERTA: a
+ * raia esticada é a superfície da etapa indo até o pé da tela, e é ela que diz "cabe mais
+ * aqui". O que não pode voltar é o POÇO (superfície mais escura que a página).
+ *
+ * E não voltamos ao `vh`: quem dá a altura é a CADEIA DE FLEX do shell
+ * (`.shell{min-height:100vh}` → `.coluna` → `.conteudo{flex:1}` → aqui), então o board
+ * acompanha a janela sem nenhum número mágico que envelheça quando o cabeçalho mudar de
+ * altura — que é como aquele `- 230px` tinha ficado errado. */
+/* 🔴 `min-height: 260px` e NÃO `min-height: 0`, e os dois papéis dele são um só. Um item de
+ * flex tem `min-height: auto` por padrão — ou seja, ele se recusa a encolher abaixo do
+ * próprio conteúdo, e o board empurraria a página pra fora da janela. Declarar QUALQUER
+ * valor explícito desliga esse `auto`. 260px é o piso de uma região de trabalho útil (cabe
+ * cabeçalho de raia + dois cartões) pra que, em janela baixa ou zoom alto, o board não
+ * encolha até virar uma fresta. Não é espaço na escala de 4px, é tamanho de região. */
+/* ⚠️ O filete que fechava a região embaixo saiu quando as colunas ganharam caixa: o pé de
+ * cada raia agora é uma borda, e uma linha atravessando cinco bordas horizontais lê como
+ * risco. Quem diz onde o board acaba são as colunas. */
+.boardWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Degradês de borda: a última coluna some por FADE em vez de ser cortada a faca.
+ *
+ * Os dois lados, e cada um ligado só quando há mesmo conteúdo escondido daquele lado
+ * (`src/lib/rolagem-board.ts` decide, o `Board.tsx` aplica a classe). O da esquerda não
+ * existia — e sem ele, depois de rolar, o board parecia começar no meio de uma coluna.
+ *
+ * 32px e não 56: o fade largo do v2-A comia meia coluna e era ELE que fazia a 4ª coluna
+ * parecer "cortada e lavada". Estreito, ele lê como borda macia; largo, lê como defeito.
+ *
+ * A parada opaca é `--fundo` porque quem está atrás do board é o CHÃO da página, não um
+ * painel. A segunda parada é a mesma cor com alfa 0 — escrita como branco transparente, que
+ * é invisível por definição e serve aos dois temas. */
+.boardWrap::before,
+.boardWrap::after {
+  content: '';
+  position: absolute;
+  inset-block: 0 var(--s-3);
+  inline-size: 32px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+  transition: opacity var(--t-rapido) var(--suave);
+}
+.boardWrap::before {
+  inset-inline-start: 0;
+  background: linear-gradient(to right, var(--fundo), rgba(255, 255, 255, 0));
+}
+.boardWrap::after {
+  inset-inline-end: 0;
+  background: linear-gradient(to left, var(--fundo), rgba(255, 255, 255, 0));
+}
+.temEsquerda::before { opacity: 1; }
+.temDireita::after { opacity: 1; }
+
+/* ── As setas de rolagem: a afordância que faltava ────────────────────────────────────
+ *
+ * 🔴 ISTO EXISTE PORQUE FADE E SCROLLBAR NÃO BASTAM. Em 1440 cabem 3,9 colunas de um funil
+ * de 5: a 4ª é cortada 20px antes do fim e a 5ª não existe na tela. O único sinal de que
+ * havia mais era uma barra de rolagem a 700px dali, e o resultado é a queixa literal do
+ * dono — *"sem nenhuma afordância dizendo que há mais"*. Fade diz "acaba macio"; só um
+ * CONTROLE diz "clique e tem mais".
+ *
+ * Sem sombra, de propósito: a barreira de sombra do kit reserva `box-shadow`
+ * pro que flutua sobre o conteúdo, e a seta está ancorada na borda do board. O que a
+ * destaca é o par borda `--linha-forte` + fundo `--superficie` sobre o degradê — o degradê já
+ * apagou o que está atrás, então ela não precisa de elevação pra ser lida.
+ *
+ * `--h-control` nos dois eixos: ela é um controle, tem a altura de todos os outros. */
+.setaRolar {
+  position: absolute;
+  inset-block-start: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
+  inline-size: var(--h-control);
+  block-size: var(--h-control);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-pill);
+  background: var(--superficie);
+  color: var(--tinta-2);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--t-rapido) var(--suave),
+    background-color var(--t-rapido) var(--suave),
+    border-color var(--t-rapido) var(--suave);
+}
+.setaVisivel {
+  opacity: 1;
+  pointer-events: auto;
+}
+.setaRolar:hover {
+  background: var(--superficie-hover);
+  border-color: var(--tinta-3);
+  color: var(--tinta);
+}
+.setaEsq { inset-inline-start: 0; }
+.setaDir { inset-inline-end: 0; }
+
+/* ── O trilho ─────────────────────────────────────────────────────────────────────────
+ *
+ * `stretch` mantém as raias com a mesma altura; com `flex-start` cada uma encolhia até o
+ * próprio conteúdo e o board lia esfarrapado (era a queixa "alturas irregulares"). Agora
+ * elas esticam até a altura do board, que é a da janela — a linha de base é a tela, não o
+ * cartão mais alto. */
+.board {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  /* `--s-4` (12), a calha do protótipo. Era `--gutter` (16), calibrado pra quando a separação
+   * entre raias era um filete no meio do vão — sem caixa, o vão PRECISAVA ser largo pra ler
+   * como separação. Com duas bordas de verdade, 16 abre buraco. */
+  gap: var(--s-4);
+  overflow-x: auto;
+  /* Folga pra sombra de repouso das colunas não ser decepada pelo `overflow-x`. */
+  padding: var(--s-1) var(--s-1) var(--s-3);
+  /* Rolagem horizontal encosta na próxima coluna em vez de parar no meio de um cartão.
+   * `proximity` e não `mandatory`: só ajuda quando o usuário já parou perto, sem sequestrar
+   * o gesto de quem está passando o olho pelo funil inteiro. */
+  scroll-snap-type: x proximity;
+}
+
+/* Barra de rolagem discreta e on-brand. ATENÇÃO: no Chromium, declarar
+ * `scrollbar-width`/`scrollbar-color` FAZ o navegador ignorar `::-webkit-scrollbar`
+ * (e aí voltam os botões de seta do Windows). Por isso o padrão só entra onde o
+ * `::-webkit-scrollbar` não existe (Firefox). */
+.board::-webkit-scrollbar { height: 8px; }
+.board::-webkit-scrollbar-track { background: transparent; }
+.board::-webkit-scrollbar-thumb {
+  background: var(--linha-forte);
+  border-radius: var(--r-pill);
+}
+.board::-webkit-scrollbar-thumb:hover { background: var(--icone-mudo); }
+
+@supports not selector(::-webkit-scrollbar) {
+  .board,
+  .colunaCorpo {
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-forte) transparent;
+  }
+}
+
+/* ── Coluna: uma RAIA, não um poço ────────────────────────────────────────────────────
+ *
+ * `flex: 1 0 280px`: cresce pra preencher a largura quando o funil tem poucas etapas (antes
+ * sobrava vão morto à direita) e nunca encolhe abaixo de 280, onde título e valor do cartão
+ * começam a quebrar feio. Com muitas etapas o board rola — isso é normal em kanban, e agora
+ * as setas dizem isso em voz alta.
+ *
+ * `min-height: 0` é o que deixa o `.colunaCorpo` rolar por dentro em vez de esticar a raia
+ * (regra de flexbox: item de flex não encolhe abaixo do conteúdo sem isto). */
+.coluna {
+  position: relative;
+  flex: 1 0 280px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  /* 🔴 `overflow: hidden` aqui é o que faz a barra de cor da etapa e o corpo rolável
+   * respeitarem o canto arredondado. Não custa dropdown nenhum: o kebab do cartão renderiza
+   * num portal preso ao `<body>` (ver `.menu`), não dentro da coluna — o mesmo motivo pelo
+   * qual o `.rail`, cujos dois dropdowns SÃO filhos dele, não pode ter esta linha. */
+  overflow: hidden;
+}
+
+/* ⚠️ O filete que ficava no MEIO da calha entre duas raias saiu daqui. Ele era o esqueleto do
+ * board enquanto a coluna não tinha corpo — sem ele, cinco pilhas de cartão sobre a página
+ * liam como uma lista larga, e uma raia vazia no meio do funil deixava de existir. Com a
+ * coluna virando painel, cada raia tem duas bordas próprias: o filete virava uma terceira
+ * linha vertical na mesma calha de 12px. */
+
+/* ── Cabeçalho da raia ────────────────────────────────────────────────────────────────
+ *
+ * `flex-shrink: 0` porque ele é a âncora: quando a pilha rola por dentro, o nome da etapa e
+ * o total NÃO saem da tela. É o que substitui o ponto de etapa que cada cartão carregava. */
+.colunaHead {
+  flex-shrink: 0;
+  margin-bottom: var(--s-3);
+}
+
+/* 🔴 O PADDING MORA AQUI, NÃO NO `.colunaHead`, e a razão é a barra de etapa logo abaixo:
+ * recuada, ela viraria um traço curto flutuando no meio do cabeçalho; sangrando de borda a
+ * borda, ela é a faixa que marca a raia. É o `overflow: hidden` da coluna que faz a barra
+ * respeitar os cantos arredondados nas pontas. */
+.colunaLinha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-3);
+}
+
+/* 🔴 A BARRA DE ETAPA — a cor de dado virou estrutura.
+ *
+ * 2px, largura da raia, na cor que o usuário escolheu (o kit autoriza ponto de 6 ou barra
+ * de 2). Ela faz três trabalhos que a bolinha de 6px não fazia: marca onde a raia começa, dá
+ * ao board um ritmo horizontal no topo, e desenha o funil como uma sequência de faixas.
+ *
+ * A cor vem inline do dado (`Coluna.tsx`), nunca daqui — a mesma etapa tem a mesma cor no
+ * /config/funis, no ponto do funil do painel e no cartão em arrasto. */
+.colunaBarra {
+  display: block;
+  block-size: 2px;
+  border-radius: var(--r-pill);
+}
+
+/* 11/600 CAIXA ALTA com tracking — o 11px da escala é reservado a exatamente isto. Era 13/500
+ * `--tinta`, o MESMO registro do título do cartão — cabeçalho e conteúdo no mesmo tom é o que
+ * fazia o board não ter hierarquia nenhuma. Em caixa alta ele vira rótulo de estrutura e
+ * para de competir com o dado. */
+.colunaNome {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Badge de contagem em `--trilho`: o que está atrás dele AQUI é a superfície da página, e a
+ * receita do kit pede `--trilho` justamente nesse caso — badge é poço. Ele já foi da cor da
+ * própria superfície, correto quando havia um poço cinza atrás, invisível depois que o poço
+ * saiu. Trocar isso não é cosmético: o chip sumia por completo. */
+.colunaCount {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  color: var(--tinta-3);
+  background: var(--trilho);
+  border-radius: var(--r-pill);
+  padding: var(--s-1) var(--s-3);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* O total da etapa desce pro mesmo registro `micro` do resto do cabeçalho. Em 13px ele era
+ * o texto mais alto da linha e o olho lia os cinco totais ANTES dos negócios — dado de
+ * apoio roubando a primeira leitura do dado principal. */
+.colunaSoma {
+  margin-left: auto;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── O corpo da raia: a pilha rolável e o alvo de soltar ──────────────────────────────
+ *
+ * 🔴 O `ref` do `useDroppable` está NESTE elemento. `flex: 1 1 auto` é o que faz o alvo
+ * ocupar a raia inteira até o pé da janela: antes ele terminava no último cartão, e soltar
+ * um negócio 100px abaixo da pilha simplesmente não funcionava, sem nenhum aviso.
+ *
+ * O `+ Adicionar` mora AQUI DENTRO, como último filho, e não como irmão depois do corpo:
+ * como irmão, com a raia agora indo até o fim da tela, ele ficaria ancorado a ~600px
+ * abaixo do último cartão. Dentro, ele encosta na pilha — que é onde a mão já está. */
+.colunaCorpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  overflow-y: auto;
+  /* 🔴 O RECUO EXISTE PORQUE O CARTÃO SOBE, e sem ele o topo do PRIMEIRO cartão era
+   * DECEPADO no hover.
+   *
+   * `overflow-y: auto` recorta tudo que passa da caixa de padding — e o primeiro cartão
+   * nascia colado nesse limite. O `translateY(-2px)` do hover jogava a borda superior 2px
+   * pra fora, e o cartão aparecia com três lados azuis e o de cima cortado. Medido:
+   * topo do cartão em 150,9 contra 152,9 do limite, folga de −2px.
+   *
+   * ⚠️ E `overflow-x` também vale `auto` aqui, mesmo sem ninguém ter escrito isso: pelo
+   * CSS, definir UM eixo como não-visível força o outro a `auto`. Quem mexer neste bloco
+   * precisa saber que os dois recortam.
+   *
+   * 4px e não 2: o recorte é sub-pixel e igualar a folga ao deslocamento exato deixa a
+   * borda na fronteira do arredondamento. O que este recuo NÃO cobre — de propósito — é o
+   * cartão parcialmente rolado pra fora do topo: ali o corte é a rolagem, e é o que se
+   * espera de ver. */
+  padding: var(--s-2) var(--s-3) var(--s-3);
+  border-radius: var(--r-painel);
+  transition:
+    background-color var(--t-rapido) var(--suave),
+    outline-color var(--t-rapido) var(--suave);
+  outline: 1px solid transparent;
+  outline-offset: -1px;
+}
+.colunaCorpo::-webkit-scrollbar { width: 8px; }
+.colunaCorpo::-webkit-scrollbar-track { background: transparent; }
+.colunaCorpo::-webkit-scrollbar-thumb { background: var(--linha-forte); border-radius: var(--r-pill); }
+
+/* 🔴 A ÚNICA HORA EM QUE A RAIA É UM RECIPIENTE. Fora do arrasto ela não tem trabalho de
+ * conter nada — a permissão de superfície é de "quem contém pilha rolável", e este
+ * é o momento em que conter é a informação. O `isOver` do dnd-kit já existia sem ser lido
+ * até a rodada anterior; agora ele pinta o alvo inteiro, do topo ao pé da tela.
+ *
+ * `outline` e não `border`: borda mudaria a caixa e empurraria os cartões 1px a cada
+ * passagem do cursor. */
+.colunaCorpoSobre {
+  background: var(--acento-wash);
+  outline-color: var(--acento-linha);
+}
+
+/* ⚠️ O `.colunaVazia` — uma linha só, "Nenhum negócio nesta etapa" — saiu nesta rodada do kit. A
+ * coluna vazia usa `components/ui/EstadoVazio`, que diz também o que FAZER: num kanban, uma
+ * etapa vazia é o estado mais comum que existe (todo funil tem etapas de fim vazias), e a
+ * frase antiga descrevia o óbvio pra quem já estava olhando pra um poço sem cartão. */
+
+/* ── Cartão — alvo de ~72px ──────────────────────────────────────────────────── */
+
+/* `--r-controle` e não `--r-painel`: o cartão é um objeto pequeno dentro de uma região, e 8px
+ * de raio nele lê inflado.
+ *
+ * 🔴 O CARTÃO TEM QUE PARECER QUE SE PEGA, e são três coisas juntas que fazem isso:
+ *   · `cursor: grab` (e `grabbing` no aperto) — a afordância mais barata que existe;
+ *     auditoria:ok doc-interno — "plano" na linha abaixo é o plano VISUAL da tela, não documento nosso.
+ *   · o hover LEVANTA 2px — deslocamento é o que o olho lê como "saiu do plano";
+ *   · a borda escurece pro `--acento`, a mesma cor do anel de foco.
+ *
+ * 🔴 `--superficie-alta` E NÃO `--superficie`: o cartão vive DENTRO de um painel, e desde que
+ * a coluna virou painel os dois seriam a mesma cor. No claro `--superficie-alta` é mais
+ * ESCURA que a superfície (não há para onde clarear em cima do branco puro), que é exatamente
+ * como o protótipo resolve o plano aninhado.
+ *
+ * A borda desce de `--linha-forte` pra `--linha` pelo mesmo motivo: dentro de uma caixa que
+ * já tem borda, a borda dura do cartão somava um segundo contorno pesado a cada 70px.
+ *
+ * 🔴 E NÃO HÁ SOMBRA AQUI, de propósito — nem no protótipo, cujo `.card` também é só
+ * superfície + borda + raio. A elevação neste board é da COLUNA; o cartão se destaca por
+ * plano, e no hover por deslocamento (`translateY(-2px)`) e pela borda em `--acento`, que é a
+ * cor do anel de foco. A sombra fica onde ela é verdade: `.cartaoArrastando`.
+ *
+ * `flex-shrink: 0`: dentro de um `.colunaCorpo` que agora é flex COM altura definida, um
+ * cartão de 2 linhas era espremido quando a pilha passava da raia. */
+.cartao {
+  flex-shrink: 0;
+  background: var(--superficie-alta);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  cursor: grab;
+  transition:
+    transform var(--t-rapido) var(--mola),
+    border-color var(--t-rapido) var(--suave);
+}
+/* 🔴 OS TRÊS ESTADOS ACENDEM JUNTOS — e os dois últimos são correção de um bug real.
+ *
+ * O kebab aparece em TRÊS situações (ver `.kebab` abaixo): cartão sob o cursor, kebab com
+ * foco de teclado, e menu aberto (`aria-expanded`). Só a primeira acendia o cartão. As
+ * outras duas produziam um estado MEIO ACESO — três pontinhos visíveis num cartão com
+ * borda cinza de repouso — que é exatamente o que se vê ao clicar no kebab: o menu abre num
+ * portal preso ao `<body>`, o ponteiro sai do cartão, o `:hover` cai, e o cartão volta a
+ * parecer inerte enquanto o menu DELE está aberto na tela.
+ *
+ * `:has()` resolve porque a condição está num DESCENDENTE e o efeito é no ancestral, que é
+ * a única direção que CSS não sabia expressar antes dele.
+ *
+ * ⚠️ Cuidado de especificidade, porque a intuição erra aqui: `:has()` NÃO pesa como
+ * pseudo-classe, ele pesa como o seu argumento mais específico. `.cartao:has(.kebab[…])` é
+ * (0,3,0) e portanto GANHA de `.cartaoArrastando:hover` (0,2,0), que vem depois na folha.
+ * Não há conflito só porque o overlay de arraste renderiza `CartaoView` SEM a prop `menu`
+ * (`Board.tsx:249`) — sem kebab dentro, o `:has` não tem o que casar. Se um dia o overlay
+ * passar a ter menu, este seletor precisa de `:not(.cartaoArrastando)`. */
+.cartao:hover,
+.cartao:has(.kebab:focus-visible),
+.cartao:has(.kebab[aria-expanded='true']) {
+  transform: translateY(-2px);
+  border-color: var(--acento);
+}
+/* O aperto, antes de o dnd-kit assumir: os 6px de folga do sensor acontecem aqui. */
+.cartao:active { cursor: grabbing; }
+
+.cartaoTopo { display: flex; align-items: flex-start; gap: var(--s-3); }
+
+/* Ponto de etapa, 6px — a dose que o kit dá à cor de dado. 🔴 ELE SÓ APARECE NO CARTÃO EM
+ * ARRASTO — ver a nota em `Cartao.tsx`.
+ * Dentro da raia ele virou repetição da barra de 2px do cabeçalho, que agora
+ * carrega a cor da etapa com muito mais força; fora dela (no `DragOverlay`) ele é a única
+ * coisa que ainda diz de onde o objeto na mão veio.
+ *
+ * Os 4px de topo alinham o disco com a primeira linha do título. */
+.pontoEtapa {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: var(--r-pill);
+  margin-block-start: var(--s-2);
+  flex: 0 0 auto;
+}
+
+/* Até DUAS linhas. Sem o clamp, um título longo empurra o cartão pra 5 linhas e a
+ * coluna deixa de ter pitch previsível — é o que fazia a varredura vertical do board falhar. */
+.cartaoTitulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Botão só-de-ícone: `--tinta-3` e não `--icone-mudo` — o ícone informa sozinho, não há rótulo
+ * ao lado dele, e só o ícone DECORATIVO pode ficar mais claro que texto.
+ *
+ * `opacity` em repouso e cheio no hover DO CARTÃO (não do próprio kebab): três pontinhos em
+ * cada cartão de cada raia somam ~15 marcas verticais competindo com o título, e a ação que
+ * eles abrem é rara. Some do repouso, existe quando a mão chega. O `:focus-visible` traz de
+ * volta pro teclado — senão a ação some pra quem navega sem mouse. */
+/* 🔴 24×24 e não os 20×25,8 de antes (`padding: var(--s-1)` em volta de um glifo de 16), que
+ * é abaixo do mínimo da WCAG 2.5.8. O número não é inventado nem é um sexto tamanho: `--s-6`
+ * é exatamente o quadrado do `.soIcone.pequeno` do `Botao` — o kebab não vira `<Botao>` porque
+ * é gatilho de menu com portal e `aria-expanded`, mas o tamanho dele é o do vocabulário.
+ *
+ * Medido no navegador; nenhuma barreira olha alvo de clique, e o defeito é invisível a olho
+ * porque o ícone continua centrado — o que falta é a MOLDURA em volta dele. */
+.kebab {
+  border: 0;
+  background: transparent;
+  color: var(--tinta-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-6);
+  height: var(--s-6);
+  padding: 0;
+  border-radius: var(--r-pequeno);
+  flex-shrink: 0;
+  opacity: 0;
+  transition:
+    opacity var(--t-rapido) var(--suave),
+    background-color var(--t-rapido) var(--suave);
+}
+.cartao:hover .kebab,
+.kebab:focus-visible,
+.kebab[aria-expanded='true'] { opacity: 1; }
+.kebab:hover { background: var(--superficie-hover); color: var(--tinta); }
+
+/* A fila de sinais (faixa 2 do cartão). `wrap` porque três pílulas + trava não cabem em
+ * 250px úteis, e espremer pílula quebra o texto dentro dela; quebrar a FILA custa uma linha
+ * e mantém cada sinal legível. */
+.cartaoSinais {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* Ponto de "tem atividade planejada". Continua ponto, e não vira pílula, pelo motivo escrito
+ * em `Cartao.tsx`: é o estado da MAIORIA dos cartões de um funil saudável, e sinal só paga o
+ * próprio espaço quando é exceção. 8px (não 6) porque aqui ele é o sinal em si, não a dose
+ * de uma cor de dado. */
+.pontoAgenda {
+  display: inline-block;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  flex: 0 0 auto;
+}
+
+/* Rodapé: avatar + quem é + valor à direita. O `min-width: 0` no nome é o que permite o
+ * ellipsis dentro de um flex — sem ele o nome empurra o valor pra fora do cartão. */
+.cartaoRodape {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* 13, mesmo tamanho do título: o que separa os dois é COR. O 12px sumiu da escala. */
+.cartaoSub {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* `margin-left: auto` e não uma coluna de grade: sem contato nem empresa o cartão não
+ * desenha avatar nem nome, e o valor tem que continuar encostado na direita sozinho. */
+.cartaoValor {
+  margin-left: auto;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aviso { padding: var(--s-7); text-align: center; font-size: var(--fs-body); color: var(--tinta-3); }
+
+/* O cartão no `DragOverlay` — ele flutua DE VERDADE, colado no cursor, acima de tudo. É a
+ * única categoria a que a regra de contenção dá sombra, e por isso `var(--elev-2)` e nunca um
+ * rgba() solto.
+ *
+ * `cursor: grabbing` aqui e não só no `:active`: durante o arraste o ponteiro está sobre o
+ * overlay, não sobre o cartão de origem. A borda em `--acento` é a mesma do hover — o objeto
+ * que estava destacado sob o mouse continua destacado na mão. */
+.cartaoArrastando {
+  box-shadow: var(--elev-2);
+  border-color: var(--acento);
+  cursor: grabbing;
+}
+/* O overlay não é alvo de hover (ele acompanha o cursor): sem isto o `translateY(-2px)` do
+ * `.cartao:hover` entraria junto e o cartão pareceria escorregar do ponteiro. */
+.cartaoArrastando:hover { transform: none; }
+/* No overlay o kebab volta a aparecer: o cartão na mão não recebe hover, e sem isto ele
+ * perderia os três pontinhos no exato momento em que o usuário está olhando pra ele. */
+.cartaoArrastando .kebab { opacity: 1; }
+
+/* ── "+ Adicionar": botão TERCIÁRIO ──────────────────────────────────────────── */
+
+/* Era um fantasma tracejado cinza com `opacity: .75` — a receita exata de "desabilitado",
+ * num controle que é a segunda ação mais usada do board.
+ *
+ * 🔴 O HOVER MUDOU DE `--trilho-hover` PRA `--superficie-hover`, e não é detalhe: `--trilho-hover`
+ * (#E6E6E6) é o hover de item SOBRE a moldura cinza, e a moldura aqui deixou de existir.
+ * Sobre o branco da raia ele piscava um cinza escuro a cada passagem do mouse. `--superficie-hover`
+ * (#F6F6F6) é o hover de linha sobre branco, que é o que isto é agora. */
+/* Alinhado à ESQUERDA, não centrado: ele passa a encostar no mesmo eixo vertical em que
+ * começam todos os títulos de cartão da raia. Centrado, ele flutuava no meio de uma coluna
+ * de 280px sem nada a que se prender — e "solto no meio do branco" é metade do que fazia a
+ * tela parecer improvisada. Alinhado, ele lê como a próxima linha da pilha. */
+/* Campo BRANCO — a borda é que o desenha, já que o fundo dele e o da raia são o
+ * mesmo branco. */
+/* O "+ Adicionar" do pé da coluna: alinhado à ESQUERDA, não centrado. Ele é um convite
+ * discreto embaixo da pilha de cartões, e centrado ele vira um botão de barra — foi o que o
+ * navegador mostrou quando a classe antiga saiu e só o `larguraTotal` ficou. */
+.adicionar {
+  justify-content: flex-start;
+}
+
+.quickInput {
+  flex-shrink: 0;
+  width: 100%;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  background: var(--superficie);
+}
+.quickInput::placeholder { color: var(--tinta-3); }
+
+/* ── Menu do cartão (dropdown) e toast ───────────────────────────────────────── */
+
+.menuWrap { position: relative; }
+
+/* Dropdown: flutua sobre o conteúdo → `--elev-2`.
+ *
+ * 🔴 `position: fixed`, não `absolute`, e o `Board.tsx` calcula o `top`/`left`. Absoluto,
+ * ele era recortado pelo `overflow-y: auto` do `.colunaCorpo` — que é um contexto de
+ * rolagem e CLIPA mesmo quando não há barra visível. Com a raia agora indo até o pé da tela
+ * isso passou a acontecer em quase todo cartão: o menu abria e aparecia pela metade, ou não
+ * aparecia. Fixo, ele escapa do recorte. */
+.menu {
+  position: fixed;
+  min-width: 190px;
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-2);
+  padding: var(--s-1);
+  z-index: 40;
+}
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  padding: var(--s-3);
+  border: 0;
+  background: transparent;
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  cursor: pointer;
+  text-align: left;
+}
+/* `--superficie-hover` e não `--trilho-hover`: este hover acontece sobre o BRANCO do menu. */
+.menuItem:hover { background: var(--superficie-hover); }
+
+.perderBox { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-1); }
+/* Toast de erro: `position: fixed` sobre a tela inteira — flutua de verdade. */
+.toast {
+  position: fixed;
+  bottom: var(--s-6);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--erro-wash);
+  color: var(--erro);
+  border: 1px solid var(--erro);
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-controle);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  box-shadow: var(--elev-2);
+  z-index: 50;
+}
+
+/* ── Sinais do cartão ────────────────────────────────────────────────────────── */
+
+/* ⚠️ `.badgeAtrasada`, `.badgePlanejada`, `.travado` e `.sla*` SAÍRAM daqui nesta rodada do kit e
+ * viraram `components/ui/Pill` — atividade atrasada, previsão de fechamento, prazo de etapa
+ * e trava de campo obrigatório agora dividem a MESMA fila e a mesma forma. Antes eram quatro
+ * vocabulários no mesmo cartão (dois pontos coloridos, um chip cinza, um cadeado num quadro
+ * âmbar), cada um com padding e raio próprios. Não recrie um chip local: variante nova de
+ * status nasce no `Pill`, senão o cartão volta a ser uma colcha de retalhos.
+ *
+ * O único ponto que sobreviveu é o de agenda PLANEJADA (`.pontoAgenda`, acima), e o motivo
+ * está escrito lá e em `Cartao.tsx`. */
+
+.atrasados {
+  border-radius: var(--r-pill); background: var(--erro-wash); color: var(--erro);
+  font-size: var(--fs-micro); line-height: var(--lh-micro); font-weight: 600;
+  padding: var(--s-1) var(--s-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Busca no quadro ─────────────────────────────────────────────────────────── */
+
+/* A barra fica ACIMA do board e não no `acoes` do `CabecalhoPagina`: o estado da busca é do
+ * `Board` (o filtro roda no cliente, sobre os cartões que já estão na memória), e o cabeçalho
+ * é renderizado pelo Server Component da página. Levar o campo pra lá exigiria um provider só
+ * pra transportar uma string. */
+.buscaBarra {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+}
+
+.buscaCampo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 320px;
+}
+
+/* `--icone-mudo` e não `--tinta-3`: a lupa não informa sozinha — o placeholder está do lado
+ * dela dizendo em texto o que o campo faz. */
+.buscaIcone {
+  position: absolute;
+  inset-inline-start: var(--s-3);
+  color: var(--icone-mudo);
+  pointer-events: none;
+}
+
+/* Campo BRANCO sobre página branca, desenhado pela borda — mesma receita do `.quickInput`.
+ * Padding lateral abre espaço pros dois adornos: lupa à esquerda, X à direita. */
+.buscaInput {
+  width: 100%;
+  min-height: var(--h-control);
+  padding-block: 0;
+  padding-inline: var(--s-7) var(--s-7);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  background: var(--superficie);
+}
+.buscaInput::placeholder { color: var(--tinta-3); }
+
+/* 🔴 Mata o "✕" NATIVO do `type="search"`. Sem isto o campo mostra DOIS botões de limpar lado
+ * a lado — o do Chrome e o nosso —, e o do Chrome não obedece token nenhum do kit. Visto no
+ * navegador; nenhuma barreira pega, porque o defeito não está no nosso CSS, está no que o
+ * navegador acrescenta por cima.
+ *
+ * O `type="search"` FICA (é ele que dá o papel `searchbox` pro leitor de tela e o Esc nativo);
+ * o que sai é só a decoração. Mesma família do `appearance: none` que o `globals.css` já faz
+ * nos `<select>`. */
+.buscaInput::-webkit-search-cancel-button,
+.buscaInput::-webkit-search-decoration {
+  appearance: none;
+}
+/* `role="status"` no TSX: quem usa leitor de tela precisa ouvir quantos resultados sobraram
+ * sem ter que sair do campo e varrer as raias. */
+.buscaContador {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Segmento "Meus" × "Todos" ────────────────────────────────────────────────────────
+ *
+ * A MESMA receita do segmento da agenda ("Minhas" × "Todas"), repetida byte a byte de
+ * propósito: os dois recortam por responsável e precisam parecer o mesmo controle, porque
+ * são. Quem aprendeu o gesto numa tela não deve reaprendê-lo na outra.
+ *
+ * ⚠️ E é duplicação CONSCIENTE, não descuido. Ela some no dia em que existir um componente
+ * de segmento — o botão do produto recusa este papel por escrito (uma escolha entre
+ * alternativas, com uma selecionada, não é um botão), e inventar o componente aqui, com dois
+ * chamadores e sem olhar as abas e os seletores de período que também esperam por ele, é como
+ * nasce a terceira receita divergente em vez da primeira única. */
+.filtro {
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+}
+
+.filtroItem,
+.filtroAtivo {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+/* `background: transparent` explícito: na agenda estes são `<a>`, aqui são `<button>`, e o
+ * botão nasce com fundo do agente de usuário. Sem esta linha o item inativo aparece como uma
+ * caixa cinza do navegador dentro do trilho — e só no quadro, o que faria os dois segmentos
+ * do produto divergirem exatamente onde eles precisam ser iguais. */
+.filtroItem { background: transparent; color: var(--tinta-3); }
+.filtroItem:hover { color: var(--tinta); }
+
+.filtroAtivo {
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+
+/* 🔴 Sob RECORTE o quadro é SÓ LEITURA, e o cursor não pode prometer o contrário.
+ *
+ * O motivo é de dado, não de estética: `moverNegocio` re-sequencia a coluna gravando
+ * `ordem = 0,1,2…` sobre os ids que o cliente manda. Com o quadro filtrado, esses ids são só
+ * os VISÍVEIS — os escondidos ficam com a ordem antiga e as duas faixas se interpenetram. O
+ * estrago é permanente, silencioso e só aparece quando alguém limpa o filtro.
+ *
+ * ⚠️ Este comentário dizia que o `Board` entrega `sensors={[]}` ao `DndContext`. Não entrega,
+ * e não pode: trocar o ARRAY de sensores entre renders muda o tamanho de um array de
+ * dependências dentro do dnd-kit e o React reclama em console. Quem desliga o arraste é o
+ * `disabled` do `useSortable`, no `Cartao`. Isto aqui é só a parte que a mão sente.
+ *
+ * "Recorte" é busca por texto OU filtro por responsável: quem decide é um booleano derivado
+ * do recorte inteiro (`lib/busca-board`), então todo filtro novo cai aqui sozinho. */
+.semArraste .cartao { cursor: default; }
+
+/* Foco: UM anel, o mesmo do resto do produto. */
+.filtroItem:focus-visible,
+.filtroAtivo:focus-visible,
+.kebab:focus-visible,
+.setaRolar:focus-visible,
+.menuItem:focus-visible,
+.perderConfirma:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

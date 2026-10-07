@@ -1,0 +1,57 @@
+/* EstadoVazio.module.css — vazio COM SAÍDA (kit v2, protótipo aprovado).
+ *
+ * O estado vazio é lido exatamente por quem ainda não entende o produto. Uma frase cinza
+ * ("Sem atividades agendadas.") descreve o vazio e para por aí; quem chega ali precisa
+ * saber o que FAZER, e o caminho tem que estar a um clique.
+ *
+ * ⚠️ Este bloco é CENTRADO, e o `.vazio` do `ListCard.module.css` é alinhado à esquerda de
+ * propósito. Não é incoerência: lá é uma linha solta de texto, e texto centralizado no meio
+ * do nada lê como legenda perdida. Aqui há um objeto composto — tile de ícone, título,
+ * explicação e ação empilhados —, e o tile é quem ancora o eixo. Se este componente algum
+ * dia virar só título + texto, ele volta pra esquerda. */
+
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--s-6) var(--s-4);
+}
+
+/* Tile em `--acento-wash` com o ícone em `--acento`: o único ponto de cor da região. Ele
+ * dá ao bloco um centro visual — sem ele o vazio é um buraco com legenda. */
+.tile {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-painel);
+  background: var(--acento-wash);
+  color: var(--acento);
+  margin-bottom: var(--s-4);
+}
+
+/* 13/600 `--tinta` — o único 600 do bloco. O título aqui é a frase que a pessoa lê primeiro,
+ * e é curto o bastante pra não precisar de tamanho maior pra ganhar peso. */
+.titulo {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-body);
+  color: var(--tinta);
+}
+
+/* `--tinta-3` (5,74:1 no branco), NUNCA um cinza mais claro: era justamente o texto de estado
+ * vazio que o `--text-subtle` do v1 pintava a 2,58:1 — a instrução mais importante do
+ * produto, na cor menos legível dele. */
+.texto {
+  margin-top: var(--s-1);
+  max-width: 34ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.acao {
+  margin-top: var(--s-4);
+}

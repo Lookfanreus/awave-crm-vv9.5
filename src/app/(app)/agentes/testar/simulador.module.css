@@ -1,0 +1,129 @@
+/* A tela de teste do assistente. O que ela veste vem de dois lugares: `../agentes.module.css`
+ * dá o esqueleto da página (bloco, campo, rótulo, ajuda, vazio, erro) e a camada de componente
+ * da v0.7.0 (`Botao`, `AreaTexto`) dá os CONTROLES. Aqui fica só o que é desta tela e não existe
+ * em nenhum dos dois.
+ *
+ * 🔴 `.textarea` e `.botaoSec` SAÍRAM: viraram `<AreaTexto>` e `<Botao>`. As duas eram receita
+ * copiada à mão, e a do botão trazia por cima a frase "ainda não há componente de botão no
+ * produto". Há, desde a v0.7.0. Com elas foram embora os dois anéis de foco próprios — o anel
+ * do produto é um só e mora no componente. Não recrie nenhum dos quatro aqui. */
+
+/* O fio. Sem caixa em volta: a regra de contenção do kit vale aqui como em toda tela do
+ * produto — o que separa uma fala da outra é espaço, e o que diz de quem ela é são o rótulo e
+ * o alinhamento. */
+.fio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: 0 0 var(--s-5);
+  padding: 0;
+  list-style: none;
+}
+
+/* 🔴 A BOLHA TEM CORPO, E ELA É A EXCEÇÃO ESCRITA. A regra de contenção manda o conteúdo viver
+ * direto na superfície branca — mas aqui a superfície é O QUE DIZ quem falou: duas falas
+ * seguidas sem corpo, na mesma cor e no mesmo peso, viram um parágrafo só. É o mesmo argumento
+ * do cartão arrastável do funil: a caixa carrega informação, não decoração.
+ *
+ * `max-width` porque linha de leitura longa demais cansa, e porque a largura ASSIMÉTRICA é
+ * metade do sinal de quem fala.
+ *
+ * 🔴 `--r-controle` (10px) e NÃO `--r-painel` (14px), apesar de o token morto (`--r-region`)
+ * apontar em geral para o segundo — os dois kits declaram o papel dele com as MESMAS quatro
+ * palavras ("card, painel, poço, drawer"), então a renomeação literal seria `--r-painel`.
+ * Três medições dizem que aqui ela está errada:
+ *
+ *   · o cartão arrastável do funil — que o parágrafo acima invoca como O argumento de esta
+ *     bolha ter corpo — usa `--r-controle` (`.cartao`, em `kanban.module.css`). Ou seja: pela
+ *     analogia que a própria tela escreveu, o raio certo é este;
+ *   · o balão irmão da caixa de entrada (`.balaoSaida`, em `conversas.module.css`) já usa
+ *     `--r-controle`, e ele é o mesmo objeto nesta mesma família de tela;
+ *   · é o que menos mexe no desenho: `--r-region` valia 8px, então `--r-controle` (10) deixa
+ *     a bolha 2px mais redonda e `--r-painel` (14) a deixaria 6px — quase o dobro. */
+.bolha {
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: var(--r-controle);
+}
+
+/* A fala de quem está testando: encostada à esquerda, na moldura neutra.
+ *
+ * 🔴 `--trilho`, e não `--superficie-alta`. Três razões, nesta ordem: o kit morto declarava o
+ * `--chrome` que estava aqui como *"sidebar, poço de kanban, trilho de segmented"*, que é o
+ * papel que o `globals.css` de hoje dá ao `--trilho` quase palavra por palavra; as duas bolhas
+ * têm que ler como o MESMO tipo de objeto, e a irmã é um wash — tinta chapada, sem borda e sem
+ * elevação; e `--superficie-alta` é o que SOBE, cujas duas únicas ocorrências no produto
+ * (`.cartao` do kanban, `.gatilho` do seletor de espaço) vêm com borda justamente porque, sem
+ * ela, um degrau de superfície de 1,12 contra o fundo não delimita objeto nenhum — é o que o
+ * próprio `globals.css` avisa. Uma bolha sem borda apoiada só nisso some. */
+.bolhaCliente {
+  align-self: flex-start;
+  background: var(--trilho);
+}
+
+/* A fala do assistente: encostada à direita, no wash do acento — a mesma cor que o produto usa
+ * para dizer "isto é da máquina" na linha do tempo. */
+.bolhaAgente {
+  align-self: flex-end;
+  background: var(--acento-wash);
+}
+
+.quem {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+.texto {
+  margin: 4px 0 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  white-space: pre-wrap;
+}
+
+/* 🔴 O ESTADO DE ESPERA. A rodada leva segundos, e silêncio depois de um clique é a definição
+ * de tela travada — quem está do outro lado clica de novo, e cada clique custa uma chamada paga.
+ * A pulsação vem do `movimento.module.css`? Não: aqui a animação é de OPACIDADE e mora junto do
+ * seu keyframe, porque nome de keyframe em CSS Module é escopado por arquivo. */
+.esperando {
+  margin: 0 0 var(--s-5);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  animation: respira var(--t-lento) var(--suave) infinite alternate;
+}
+
+@keyframes respira {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+/* A faixa que explica por que não houve resposta — e por que falta chave.
+ *
+ * ⚠️ Chão NEUTRO, e não o wash de erro: nada foi perdido em nenhum destes estados, e o
+ * vermelho diria que o produto quebrou quando ele só recusou. Mesma escolha da tela da base de
+ * conhecimento, pelo mesmo motivo. */
+.faixaNeutra {
+  margin: 0 0 var(--s-5);
+  padding: var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  /* `--trilho` + `--r-controle`: o mesmo par da faixa neutra da tela da base, e o mesmo que o
+   * `.tutorial` e o `.andamento` do `config.module.css` já usam para bloco informativo neutro
+   * nesta família de tela. */
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}

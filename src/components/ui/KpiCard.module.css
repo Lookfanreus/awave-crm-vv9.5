@@ -1,0 +1,77 @@
+/* KpiCard.module.css — a célula da faixa de KPI, sob a regra de contenção.
+ *
+ * 🔴 A CAIXA VOLTOU, e desta vez ela é a do protótipo aprovado, não a de antes. A distinção
+ * importa porque este arquivo já perdeu a caixa uma vez, por retorno do dono ("os cards me
+ * parecem bem arcaicos") — e o diagnóstico da época estava certo pela metade: o problema era
+ * a SILHUETA (borda dura, raio pequeno, chapado), não o fato de existir uma. A resposta foi
+ * tirar a caixa de todo mundo, e o produto virou uma folha de relatório impresso.
+ *
+ * A silhueta de hoje é outra: raio 14, borda de 1px em `--linha` (não em `--linha-forte`,
+ * que é dura demais pra uma caixa grande) e `--elev-1` de repouso. Ela LEVANTA em vez de
+ * delimitar, que é a diferença entre "card de 2010" e o registro Stripe/Vercel/Supabase.
+ *
+ * ⚠️ Os divisores verticais que a `.faixaKpi` desenhava em `painel.module.css` saíram junto:
+ * divisor entre caixas é linha entre bordas, e as bordas já separam. */
+
+.bloco {
+  /* Só o empilhamento rótulo/valor/rodapé. Quem impede o número grande de esticar a coluna é
+   * o `minmax(0, 1fr)` da trilha, na grade — não uma largura aqui. */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-5);
+}
+
+/* Rótulo em micro CAIXA ALTA, não 13/500 caixa mista. O rótulo é etiqueta, não frase: em
+ * caixa alta ele identifica a coluna com menos tinta e para de disputar com a nota do
+ * rodapé, que é 13 e é o único texto de leitura do bloco.
+ *
+ * 🔴 É texto puro — sem `display: flex`, sem `gap`, sem regra pra `svg`. O KPI do kit v2 não
+ * tem ícone nem prop de ícone, e quem os desenhava era o `KpiCard.tsx`, não este arquivo:
+ * apagar CSS não tira nó do DOM, e a primeira tentativa de fazer isso só removeu o `gap`,
+ * deixando o svg colado no rótulo. O flex existia SÓ pra alinhar o ícone com o texto. */
+/* `--ls-rotulo-metrica` e não `--ls-micro`: o rótulo fica SOZINHO em cima de um número grande,
+ * e nessa posição o degrau base lê apertado. É o papel que define o tracking, não o corpo — os
+ * três degraus de caixa alta compartilham o mesmo `--fs-micro`. */
+.label {
+  color: var(--tinta-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-rotulo-metrica);
+  line-height: var(--lh-micro);
+  text-transform: uppercase;
+}
+
+/* 600 e não 500, e 29px e não 30 (a escala mudou junto): dentro de uma caixa o número precisa
+ * de PESO pra continuar sendo a figura, e de menos CORPO pra não encostar nas bordas dela. É
+ * o par do protótipo — o inverso do que valia numa página sem caixa, onde o tamanho sozinho
+ * fazia o trabalho todo. */
+.valor {
+  font-size: var(--fs-metric);
+  font-weight: 600;
+  color: var(--tinta);
+  letter-spacing: var(--ls-metric);
+  line-height: var(--lh-metric);
+  font-variant-numeric: tabular-nums;
+  margin: var(--s-4) 0 var(--s-3);
+}
+
+/* `min-height` reserva a linha do rodapé mesmo quando um dos quatro não tem nota nem delta.
+ * Sem isso a faixa fica com um bloco mais curto que os outros três e o filete de fechamento
+ * passa a ler como "faltou alguma coisa ali". */
+.rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+}
+
+.nota {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--tinta-3);
+}

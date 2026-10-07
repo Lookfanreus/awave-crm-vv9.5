@@ -1,0 +1,427 @@
+/* Rail.module.css — a sidebar do shell (kit v2).
+ *
+ * 🔴 O RAIL FICA ESCURO, E A TOP BAR MORRE. É a mudança mais visível do produto.
+ *
+ * O que veio antes: v1 tinha sidebar branca; a rodada anterior a passou pra `--trilho` (a inversão
+ * de superfície: cinza = moldura, branco = conteúdo). O dono olhou o resultado e disse
+ * "CRM de 2010, com esse cinza pesado, chapado". A resposta era um degradê vertical mais um
+ * HALO do acento no topo (o `::before`).
+ *
+ * ⚠️ O DEGRADÊ SAIU nesta rodada, e o rail é uma chapa de `--superficie` — a mesma dos
+ * painéis, nos dois temas. O motivo é que ele existia pra dar peso ao pé de uma família de
+ * superfície SÓ do rail, e essa família deixou de existir: o rail vira um painel como os
+ * outros. Quem carrega a profundidade agora é o halo, que ficou. Não devolva o degradê aqui
+ * sem antes reabrir a questão — no tema claro ele não tem para onde escurecer.
+ *
+ * A anatomia também muda: o seletor de workspace SOBE da top bar
+ * pro topo daqui (ele é o escopo de tudo que a navegação abaixo mostra) e o menu do usuário
+ * DESCE pro pé, ao lado de Configurações (conta e sistema são a mesma família). A top bar
+ * some no desktop; abaixo de 1024px sobra uma barra fina só pro ☰ (ver NavMobile). */
+
+/* 🔴 O RAIL FLUTUA. Ele é um painel como qualquer outro — superfície, borda, raio e elevação
+ * de repouso —, e a folga que o descola das bordas da janela mora no `.shell`
+ * (`app-shell.module.css`), não aqui: quem dá folga é sempre o container, senão o rail
+ * empurraria a própria caixa e a coluna do grid ficaria com a largura errada.
+ *
+ * Antes desta rodada ele era uma chapa em `x:0, y:0`, sem raio e sem sombra, encostada na
+ * borda do monitor. A tinta já era a certa; o que faltava era a SILHUETA. */
+.rail {
+  /* Chapa de `--superficie`: o rail é um painel, não uma família à parte. O que tira o
+   * "chapado" é o halo do `::before`. */
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  /* 🔴 O padding HORIZONTAL não mora aqui — mora em cada faixa (`.marca`, `.topo`,
+   * `.grupos`, `.rodape`). Motivo concreto: `.grupos` rola, e rolagem CLIPA. Com o padding
+   * no `.rail`, a caixa de `.grupos` começaria exatamente na margem do conteúdo e o brilho
+   * da barra do item ativo (que sangra ~5px pra esquerda) seria decepado na borda do
+   * scroller. Com os 12px dentro de `.grupos`, o brilho cabe folgado antes do corte. */
+  padding: var(--s-5) 0 var(--s-4);
+  /* 🔴 `100vh - --s-6` porque o `.shell` tem `--s-4` de folga EM CIMA E EMBAIXO, e `--s-6` é
+   * exatamente o dobro de `--s-4`. Com `100vh` cheio o rail passaria 24px da janela e ganharia
+   * uma barra de rolagem própria — visível, porque agora ele tem borda e raio pra denunciar
+   * onde termina. Mexeu no padding do `.shell`, mexa aqui. */
+  height: calc(100vh - var(--s-6));
+  position: sticky;
+  /* Gruda na folga, não na borda: `top: 0` colaria o rail no topo do monitor ao rolar e
+   * desfaria a flutuação exatamente quando ela mais aparece. */
+  top: var(--s-4);
+  /* 🔴 NENHUM `overflow` aqui, e isso é a diferença entre os dropdowns funcionarem e não.
+   * `overflow-y: auto` (que estava neste seletor) faz o `overflow-x` computar pra `auto`
+   * junto — é assim que o padrão CSS define, não é bug de navegador —, então QUALQUER menu
+   * absoluto de dentro do rail seria cortado nos dois eixos. Quem rola agora é só `.grupos`,
+   * e nenhum dos dois dropdowns vive lá dentro. */
+  z-index: 30;
+}
+
+/* O halo: o accent difuso escapando do canto superior esquerdo, como se houvesse uma fonte
+ * de luz fora da tela. `pointer-events: none` porque ele cobre a marca e o seletor de
+ * workspace — sem isso ele comeria o clique dos dois.
+ *
+ * 🔴 O ACENTO ENTRA POR `color-mix()`, NUNCA POR UM rgba ESCRITO À MÃO. Aqui estava
+ * `rgba(61, 90, 254, .17)` — o valor PADRÃO do acento, congelado. Consequência medida: quem
+ * tinha configurado cor de marca via `/config` recebia o halo no azul da Awave, não no dele,
+ * e nada acusava (é uma cor válida, só é a cor errada). `var()` não resolve dentro de
+ * `rgba()`, mas resolve dentro de `color-mix()` — que é o que o `.tela::before` do
+ * `auth.module.css` já fazia, com a nota certa ao lado. */
+/* ⚠️ O raio do halo é o do rail, e ele é OBRIGATÓRIO agora que o rail tem cantos: o `.rail`
+ * não pode ganhar `overflow: hidden` (ver a nota de `z-index` acima — cortaria os dois
+ * dropdowns), então quem respeita a curva é cada pseudo que pinta até a borda. Sem esta linha
+ * o halo vaza em quatro quinas quadradas por cima do canto arredondado. */
+.rail::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 230px;
+  border-radius: var(--r-painel) var(--r-painel) 0 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 100% at 12% 0%,
+    color-mix(in srgb, var(--acento) 17%, transparent),
+    transparent 62%
+  );
+}
+
+/* O halo é um pseudo POSICIONADO, então ele pintaria por cima do conteúdo não-posicionado
+ * do rail. Posicionar os filhos diretos os devolve pra cima dele (ambos com `z-index:auto`,
+ * quem vem depois na árvore ganha). */
+.rail > * {
+  position: relative;
+}
+
+/* ── Marca ──────────────────────────────────────────────────────────────────── */
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-inline: var(--s-4);
+  padding: var(--s-2) var(--s-2) var(--s-4);
+}
+
+/* O anel interno e o brilho que o protótipo põe aqui continuam FORA: os dois exigiriam
+ * `box-shadow: inset`, e sombra fora do que flutua é justamente o que
+ * a barreira de sombra do kit reprova. Num tile de 28px o ganho seria imperceptível —
+ * quem carrega a profundidade da tela é o rail, não a logo. */
+.tile {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--r-pequeno);
+  /* Degradê e não chapado: é o ÚNICO ponto do produto onde a marca aparece, e num rail
+   * escuro um quadrado de cor sólida lê como ícone de sistema.
+   *
+   * A ponta roxa é `--marca-fim`, o mesmo degradê de 145° do tile das telas de auth. Os dois
+   * traziam o hex à mão, cada um com um comentário dizendo que ele NÃO viraria token "porque
+   * não é papel de interface, é a assinatura". A intenção valia; o mecanismo não — duplicar
+   * o hex não impede um terceiro uso, só garante que a marca mude num arquivo e fique velha
+   * no outro. A proibição de usá-lo como cor de UI mora agora na nota do token, no
+   * `globals.css`, onde quem for tentar vai passar. */
+  background: linear-gradient(145deg, var(--acento), var(--marca-fim));
+  color: var(--tinta-invertida);
+  display: grid;
+  place-items: center;
+}
+
+/* O logo enviado pelo comprador, no lugar do tile.
+ *
+ * 🔴 32px e não 28 (o tamanho do tile), e o número veio de medição de campo, não de gosto: um
+ * comprador relatou que o glifo a 16px ficava "muito invisível", subiu pra 28 na instalação
+ * dele e concluiu que o ideal seria 32. O tile do produto é um GLIFO desenhado pra caber
+ * apertado; um logo de verdade tem margem interna própria e ar em volta, então precisa de
+ * mais caixa pra ler com o mesmo peso.
+ *
+ * `contain`, nunca `cover`: logo de comprador vem em qualquer proporção, e esticar ou cortar
+ * a marca de alguém é pior que mostrá-la pequena.
+ *
+ * Sem degradê e sem fundo: o tile é a NOSSA assinatura. Pintar um fundo atrás do logo dele
+ * seria emoldurar a marca do comprador com a nossa. */
+.logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: var(--r-pequeno);
+}
+
+.marcaTexto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+/* Ver a nota da A7: este 600 é lockup de marca (categoria à parte na barreira de escala),
+ * não o 600 que a escala baniu do texto de 13px. O alvo dele é 700, junto com os outros
+ * quatro lockups da família — não subiu aqui pra não mexer num e deixar três. */
+.marcaTexto b {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--tinta-2);
+}
+
+/* ── Faixas ─────────────────────────────────────────────────────────────────── */
+
+/* O seletor de workspace. Faixa própria porque ele não é item de lista: é o ESCOPO de tudo
+ * que vem abaixo, e por isso ocupa a largura cheia com borda, em vez de se alinhar à
+ * indentação do nav. */
+.topo {
+  margin-inline: var(--s-4);
+  margin-bottom: var(--s-4);
+}
+
+/* 🔴 O único scroller do rail. `min-height: 0` é obrigatório: sem ele o item flex se recusa
+ * a encolher abaixo do conteúdo, `overflow` nunca entra em ação e o rodapé (Configurações +
+ * conta) é empurrado pra fora da tela numa janela baixa — que é exatamente o bug que o
+ * `overflow-y: auto` do `.rail` existia pra evitar, agora resolvido sem clipar os menus. */
+.grupos {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-inline: var(--s-4);
+}
+
+/* `--tinta-3`, o MESMO tom dos itens de nav inativos logo abaixo — não um cinza só desta
+ * faixa.
+ *
+ * 🔴 O protótipo usa #5C6270 aqui. Ele dá 3,09:1 e REPROVA; a barreira de contraste acusa.
+ * O rótulo já se distingue por tamanho (11px), caixa alta e tracking, que é a mesma regra
+ * do lado claro. Um quarto tom de cinza seria o quarto tom sutil — o erro que a rampa de
+ * três tintas nasceu corrigindo (o `--text-subtle` do v1 a 2,58:1).
+ *
+ * A `border-left` transparente aqui não pinta nada: ela existe pra o rótulo cair na MESMA
+ * coluna de texto dos itens de nav, que reservam 2,5px pra barra do estado ativo. */
+/* `--ls-rotulo-secao` e não `--ls-micro`: este é o rótulo mais CURTO e mais estrutural do
+ * produto — ele separa grupos de navegação, não descreve dado —, e é o que mais ganha ar. */
+.sec {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-rotulo-secao);
+  line-height: var(--lh-micro);
+  text-transform: uppercase;
+  color: var(--tinta-3);
+  border-left: 2.5px solid transparent;
+  padding: var(--s-4) var(--s-3) var(--s-2);
+}
+
+/* Cola o rótulo do primeiro grupo na faixa acima; ele já traz o próprio respiro no
+ * `padding-top`. */
+.grupos > .sec:first-child {
+  padding-top: 0;
+}
+
+/* ── Item de nav ────────────────────────────────────────────────────────────── */
+
+/* 🔴 A `border-left: 2.5px` TRANSPARENTE em TODO item é reserva de espaço, não decoração.
+ * Sem ela (isto é, com a barra aparecendo só no `.ativo`), `box-sizing: border-box` desconta
+ * a borda do conteúdo e o rótulo inteiro DESLIZA 2,5px pra direita ao trocar de página. A
+ * A7 mediu esse pulo; esta linha é a correção dele. Só a barra do `::before` muda de
+ * estado — a borda é régua, e permanece invisível sempre. */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--h-nav);
+  padding: 0 var(--s-3);
+  border-left: 2.5px solid transparent;
+  border-radius: var(--r-controle);
+  color: var(--tinta-3);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  position: relative;
+  transition:
+    background-color var(--t-rapido) var(--suave),
+    color var(--t-rapido) var(--suave);
+}
+
+.nav svg {
+  color: var(--tinta-3);
+  flex-shrink: 0;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+/* `--superficie-hover` — o token cujo papel é literalmente este: hover sobre o painel. O rail
+ * é uma chapa de `--superficie`, então o hover dele é o mesmo de qualquer linha de lista.
+ *
+ * 🔴 O ERRO QUE ESTA LINHA IMPEDE DE VOLTAR: aqui estava `rgba(255, 255, 255, .045)`, com uma
+ * nota dizendo que no escuro "hover não é outra cor, é mais luz". No escuro funcionava. No
+ * CLARO o chão é `#FFFFFF`, e branco sobre branco compõe exatamente `#FFFFFF`: medido, o hover
+ * era NO-OP — razão 1,00, nada. Sobrava a troca de tinta (5,89 → 6,78), imperceptível a 13px.
+ * Um véu não sabe em que tema está; um token, que tem valor nos dois, sabe.
+ *
+ * Medido depois: degrau de 1,06 no escuro e 1,10 no claro contra o chão do rail. */
+.nav:hover {
+  background: var(--superficie-hover);
+  color: var(--tinta-2);
+}
+
+.nav:hover svg {
+  color: var(--tinta-2);
+}
+
+/* 🔴 O ANEL DE FOCO. Sem esta regra o item caía no anel PADRÃO DO NAVEGADOR (`1px auto`), que
+ * muda de desenho a cada navegador e some contra fundo escuro — e o rail aparece em TODAS as
+ * telas do produto, então quem navega por teclado trocava de anel a cada Tab que saísse do
+ * conteúdo pra navegação.
+ *
+ * É o anel de DENTRO (offset negativo), e não o de fora que a maioria dos controles usa. Dois
+ * motivos, os dois medidos no arquivo:
+ *   1. o item vive em `.grupos`, o único scroller do rail — e rolagem CLIPA. Um anel com
+ *      offset positivo seria decepado nas pontas da lista;
+ *   2. os itens se empilham com `gap: var(--s-2)` (4px) e o anel de fora alcança exatamente
+ *      4px, então ele encostaria na linha vizinha em vez de circundar a sua.
+ * É a mesma escolha, pelo mesmo motivo, das linhas de lista e de tabela do produto.
+ *
+ * `:focus-visible` e não `:focus`: o anel diz "o teclado está aqui". Aceso também no clique de
+ * mouse, ele vira decoração e deixa de ser lido como posição. */
+.nav:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* ATIVO = quatro sinais somados, nenhum dependente de outro: mais luz no fundo, texto no
+ * branco puro, ícone no accent e a barra acesa. Sobra sinal pra daltonismo e monocromia.
+ *
+ * 🔴 PESO NÃO É UM DELES — o ativo é 500, igual ao inativo. No v1 o `font-weight:600`
+ * aparecia 99 vezes, e peso que está em tudo não hierarquiza nada.
+ *
+ * A tinta é `--tinta` e NÃO `--tinta-invertida`, e a distinção sobrevive à remodelação: aqui
+ * não há preenchimento de cor cheia nenhum — o fundo é a superfície com um véu de luz por
+ * cima. O papel desta tinta é ser o TOPO da rampa (mais forte que o `--tinta-3` dos itens
+ * inativos), e é isso que faz o "mais forte" ser um sinal legível. O `--tinta-invertida`
+ * responde ao acento, que o comprador rebranda; este responde à superfície, que é estrutura
+ * do kit. Ver as duas notas no `globals.css`.
+ *
+ * 🔴 O FUNDO É `--trilho`, e ele tinha o MESMO defeito do hover logo acima: era
+ * `rgba(255, 255, 255, .075)` e no claro compunha `#FFFFFF` sobre `#FFFFFF` — o item ativo
+ * ficava sem fundo nenhum, sustentado só pela barrinha de 2,5px. `--trilho` é a família do que
+ * é DIFERENTE da superfície que o contém, nos dois temas, que é exatamente o que um item
+ * selecionado precisa. Medido: 1,16 no escuro e 1,12 no claro, um degrau acima do hover
+ * (1,06 / 1,10) nos dois.
+ *
+ * ⚠️ E o acento que entra aqui — o ícone e a barra — cai sobre `--trilho`, superfície que a
+ * barreira de contraste NÃO mede para cor de acento, de propósito. Não há violação: os dois
+ * são objeto GRÁFICO (piso 3; o ícone tem rótulo de texto ao lado), e medem 4,25 no escuro e
+ * 4,22 no claro. O que não pode cair num poço é TEXTO de acento — e aqui o texto é `--tinta`. */
+.ativo,
+.ativo:hover {
+  background: var(--trilho);
+  color: var(--tinta);
+}
+
+.ativo svg,
+.ativo:hover svg {
+  color: var(--acento);
+}
+
+/* A barra do item ativo, com brilho.
+ *
+ * 🔴 POR QUE UM PSEUDO-ELEMENTO E NÃO `border-left-color`: borda não brilha. O brilho é o
+ * que faz a barra parecer ACESA em vez de pintada, e é ele que o dono aprovou no protótipo.
+ *
+ * 🔴 POR QUE `filter: drop-shadow` E NÃO `box-shadow`: o protótipo usa
+ * `box-shadow: 0 0 10px 1px rgba(61,90,254,.9)`, e a barreira de sombra do kit reprova
+ * isso DUAS vezes — `box-shadow` só é permitido em seletor que flutua de verdade (menu,
+ * toast, drawer), e mesmo lá o valor tem que ser `var(--elev-2)`. As duas regras estão certas
+ * e a barra não é exceção nenhuma: ela não flutua, ela BRILHA. `drop-shadow` é a
+ * propriedade que diz isso, e o raio 5px equivale ao blur 10px do protótipo (o desvio-padrão
+ * do drop-shadow é metade do blur do box-shadow).
+ *
+ * 🔴 O BRILHO SAI DO ACENTO POR `color-mix()`. Aqui estava `rgba(61, 90, 254, .9)` — o acento
+ * PADRÃO congelado —, então a barra do item ativo brilhava no azul da Awave mesmo no deploy
+ * de quem tinha configurado a cor da própria marca. Mesmo defeito, mesma correção do halo lá
+ * em cima.
+ *
+ * Ela é posicionada EM CIMA da borda-régua (`left: -2.5px` a partir da caixa de padding cai
+ * exatamente sobre a borda), então acender a barra não desloca coisa alguma. */
+.ativo::before {
+  content: '';
+  position: absolute;
+  left: -2.5px;
+  top: var(--s-2);
+  bottom: var(--s-2);
+  width: 2.5px;
+  border-radius: 0 var(--r-pequeno) var(--r-pequeno) 0;
+  background: var(--acento);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--acento) 90%, transparent));
+  pointer-events: none;
+}
+
+/* ── Pé: sistema e conta ────────────────────────────────────────────────────── */
+
+/* `margin-inline` e não `padding-inline`: o divisor tem que ficar recuado como o resto do
+ * conteúdo do rail. Com padding ele iria de borda a borda e leria como corte de região, não
+ * como separação entre dois grupos da mesma lista. */
+.rodape {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin-inline: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--linha);
+}
+
+/* Abaixo de 1024px o rail vira gaveta: quem o tira do fluxo é o envelope em
+ * NavMobile.module.css.
+ *
+ * 🔴 E AQUI ELE DEIXA DE FLUTUAR, de propósito. Gaveta não flutua com folga — ela sai da
+ * borda da tela e vai até o pé dela. Sem este bloco o rail chegaria na gaveta com raio nos
+ * quatro cantos (inclusive nos dois que ficam FORA da tela), 24px de vão no rodapé e uma
+ * segunda sombra somando com a `--elev-2` que a própria gaveta já tem. A borda que sobra é a
+ * do lado direito: é ela que separa a gaveta da página escurecida atrás. */
+@media (max-width: 1024px) {
+  .rail {
+    height: 100%;
+    top: 0;
+    border-radius: 0;
+    border-block: 0;
+    border-inline-start: 0;
+    box-shadow: none;
+  }
+
+  .rail::before {
+    border-radius: 0;
+  }
+}
+
+/* Ponto de "saiu versão nova", ao lado de Configurações.
+ *
+ * ⚠️ Aqui havia um acento SÓ do rail, com a nota de que ele e o `--acento` respondiam a pisos
+ * de contraste diferentes (3 sobre o rail escuro × 4,5 sobre o branco). Os dois viraram um só
+ * na remodelação, porque o rail deixou de ser uma família de superfície à parte: hoje ele é
+ * `--superficie`, e o `--acento` é medido contra as três superfícies do tema. Um segundo
+ * acento não tem mais o que resolver.
+ *
+ * 6px é a dose que o kit já usa para cor que é DADO (o ponto da etapa). Fim da linha por
+ * `margin-left: auto` em vez de `position: absolute`: a linha já é flex, e um badge absoluto
+ * sobre um item de largura variável precisaria de deslocamento mágico. */
+.aviso {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background: var(--acento);
+  animation: pulsoAviso var(--t-pulso) var(--suave) infinite;
+}
+
+/* O ciclo termina em `opacity: 1`, e isso é requisito, não acaso. O bloco global de
+ * `prefers-reduced-motion` do `globals.css` não desliga a animação: ele a reduz a uma
+ * iteração de .01ms — de propósito, pra `animationend` continuar disparando. Um keyframe que
+ * terminasse apagado (`100% { opacity: 0 }`) sumiria com o ponto justamente para quem pediu
+ * menos movimento. Aqui a preferência tira o pulso e mantém a informação.
+ *
+ * ⚠️ Por isso NÃO existe um `@media (prefers-reduced-motion)` neste arquivo: seria duplicar
+ * a regra global, e com `animation: none` — a forma que o `globals.css` desaconselha por
+ * escrito. Se você veio até aqui pra "consertar a acessibilidade do ponto", já está feito. */
+@keyframes pulsoAviso {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}

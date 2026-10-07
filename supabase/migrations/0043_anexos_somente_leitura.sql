@@ -1,0 +1,37 @@
+-- 0043_anexos_somente_leitura.sql — a policy de `anexos` que a 0021 nao pegou.
+--
+-- Por que ela escapou: a 0021 rebaixou catorze policies de membro de `for all` para
+-- `for select` e nomeia uma a uma, mas foi escrita nesta branch ANTES de a `anexos` existir
+-- aqui. A tabela e a policy nasceram na 0019, na `main`, e so chegaram nesta arvore pelo
+-- merge — depois da 0021, que nunca teve como cita-las. O resultado na arvore mesclada e
+-- uma unica policy `for all to authenticated` sobrevivente, e ela e justamente a da tabela
+-- que aponta para o bucket PRIVADO de documento de cliente: o caminho do objeto e coluna
+-- (`anexos.caminho`), entao escrita de `authenticated` ali e como pendurar, do console do
+-- navegador, uma linha apontando para um caminho escolhido a dedo — ou apagar a linha e
+-- deixar o byte orfao no bucket, contando na cota do comprador para sempre.
+--
+-- O motivo de fundo e o mesmo da 0021, e nao mudou: a partir da tela `/conversas` o
+-- navegador de todo membro tem cliente Supabase e fala PostgREST direto. No PostgREST nao
+-- existe como distinguir "o servidor agindo em nome do usuario" de "o navegador agindo como
+-- o usuario" — e o mesmo token. Uma policy `for all` que autoriza a escrita do servidor
+-- autoriza a mesma escrita disparada do console, pulando server action, validacao e
+-- `exigirEngineLiberado`.
+--
+-- As duas escritas de `anexos` que saiam pela sessao (o `insert` do envio e o `delete` da
+-- exclusao, em `src/server/crm/anexos.ts`) foram movidas para o cliente de service-role no
+-- MESMO commit desta migration — sem isso, anexar e excluir anexo passariam a levar 42501.
+-- O isolamento delas passa a ser o `workspace_id: ws` do payload e o
+-- `.eq('workspace_id', ws)` do delete, com `ws` vindo de `resolverWorkspaceAtivo()`.
+--
+-- A LEITURA NAO MUDA, e isso importa mais aqui que nas catorze: `excluirNegocio`
+-- (`src/server/crm/excluir.ts`) le `anexos` PELA SESSAO de proposito, e o docblock dele
+-- declara que e a RLS que prova o escopo dos caminhos antes de o `admin()` tocar no bucket.
+-- Rebaixar para `for select` preserva exatamente essa leitura — mesmo predicado, mesmo
+-- alcance. Quem enxergava, enxerga.
+--
+-- Aditiva no sentido que importa: nao apaga linha, nao altera coluna, nao muda tipo.
+-- Rollback e recriar a policy anterior, cujo texto esta citado abaixo.
+
+-- antes: for all to authenticated using (e_membro) with check (e_membro)  [0019_anexos.sql]
+drop policy if exists anexos_membro on public.anexos;
+create policy anexos_membro on public.anexos for select to authenticated using (public.e_membro(workspace_id));

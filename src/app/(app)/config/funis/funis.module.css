@@ -1,0 +1,439 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+/* funis.module.css — editor /config/funis. Kit v2.
+ *
+ * 🔴 `.gestor` e `.editor` são PAINÉIS (os quatro tokens da receita — ver `globals.css`).
+ * Eles passaram uma temporada sem caixa nenhuma, e o que veio DAQUELA rodada e FICA é a
+ * lista: funis e etapas são listas de verdade, com divisor entre linhas, no lugar de pilhas
+ * de caixinhas com borda — aquele desenho fazia cada etapa parecer um objeto solto em vez de
+ * uma linha de uma sequência. Caixa é do BLOCO; a linha dentro dele não tem.
+ *
+ * ⚠️ `--elev-2` só na `.paleta` de cores, que é POPOVER de verdade (`position: absolute`,
+ * z-index, abre sobre o conteúdo). Os painéis levam `--elev-1`, que é repouso. Não troque um
+ * pelo outro: `--elev-2` num bloco parado faz ele parecer descolado da página.
+ *
+ * O gap de `.pagina` é `--s-5` nas três telas de /config porque é esse o valor que o
+ * `VoltarConfig` anula pra colar o link no cabeçalho. */
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* Duas colunas: gestor de funis à esquerda, editor de etapas à direita. Colapsa no mobile.
+ * ⚠️ `--s-4` (12) e não os `--s-7` (32) de antes — os 32 eram o espaço separando duas colunas
+ * que não tinham borda. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* 🔴 1280px, e não os 720 de antes. A conta é do EDITOR, não do gosto: uma linha de etapa
+ * mede grip(20) + swatch(20) + negócios(66) + chance(76) + prazo(76) + ações(143) + cinco
+ * gaps de 8 = 441px de conteúdo fixo, mais uns 130 pro nome — ~570px de piso. Com a lista
+ * de funis (320) e o gap ao lado, isso só cabe a partir de ~1240px de janela.
+ *
+ * ⚠️ SUBIU de 1240 pra 1280 quando os dois blocos viraram painel, e a conta é literal: o
+ * painel come 32px de padding lateral do editor e o gap devolveu 20 (32 → 12), então o piso
+ * sobe ~12px. 1280 é o degrau redondo acima disso — errar pra CIMA aqui empilha as colunas
+ * cedo demais, o que é feio; errar pra baixo devolve o bug que este número conserta (a linha
+ * de etapa quebrando só nos nomes longos, com a lista alternando entre 46 e 84px de altura).
+ *
+ * Abaixo disso a `.etapaLinha` continuava sendo duas colunas e o `flex-wrap` quebrava a
+ * linha só nas etapas de nome LONGO — medido a 900px: "Novo lead" e "Proposta" com as ações
+ * ao lado, "Contato feito", "Negociacao" e "Fechamento" com as ações embaixo. A lista
+ * alternava entre 46px e 84px de altura conforme o comprimento do texto, e as colunas
+ * anunciadas pelo cabeçalho deixavam de existir na metade das linhas.
+ *
+ * `minmax(0, …)` e não `1fr`: `1fr` = `minmax(auto, 1fr)`, e o `auto` deixa o min-content do
+ * bloco (input + botão numa linha) virar piso e estourar a tela. */
+@media (max-width: 1280px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Blocos, não cards.
+ *
+ * 🔴 `--col-acoes` é a largura REAL de "Renomear" + "Excluir" na receita de botão discreta
+ * abaixo, e existe como custom property local porque DOIS lugares precisam do mesmo número:
+ * a coluna vazia do `.etapaCabecalho` (que empurra "Negócios/Chance/Prazo" pro lugar) e o
+ * grupo `.etapaAcoes` de cada linha. Antes eram dois valores independentes — o cabeçalho
+ * fixo em 137px e o grupo com a largura que o texto desse — e o resultado, MEDIDO no
+ * browser, era um cabeçalho 6px à direita das próprias colunas: "Chance %" em x=1111 sobre
+ * um campo em x=1105. Uma tabela com dois eixos verticais. Com um número só, mexer na
+ * receita do botão move os dois juntos ou não move nenhum. */
+.gestor,
+.editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--s-3);
+  --col-acoes: 143px;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-5);
+}
+
+/* ⚠️ O filete sob o título saiu: a borda do painel já marca onde a seção começa, e as duas
+ * coisas juntas dão duas linhas horizontais a 40px de distância dizendo o mesmo. O seletor
+ * de filho direto FICA porque o `.subtitulo` também aparece aninhado, onde nada disto vale. */
+.gestor > .subtitulo,
+.editor > .subtitulo {
+  padding-bottom: var(--s-2);
+}
+.subtitulo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 600; letter-spacing: -0.005em; color: var(--tinta); }
+.ajuda { color: var(--tinta-3); font-size: var(--fs-body); line-height: var(--lh-body); margin: 0; }
+
+/* ── Inputs / botões compartilhados ─────────────────────────────────────────── */
+
+/* Campo BRANCO com borda `--linha-forte`: sobre página branca, campo cinza lê como desabilitado. */
+.novoRow {
+  display: flex;
+  gap: var(--s-3);
+  margin-block-start: var(--s-3);
+}
+.erro {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--erro);
+  background: var(--erro-wash);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+}
+
+/* ── Lista de funis ──────────────────────────────────────────────────────────── */
+
+.lista {
+  list-style: none;
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Divisor entre linhas; o selecionado ganha a BARRA de 2px `--acento` (o mesmo sinal do item
+ * de nav ativo do rail). A borda transparente em repouso existe pra a seleção não deslocar
+ * a linha em 2px. */
+/* `row-gap` menor que `column-gap`: numa coluna de 320px as ações não cabem ao lado do nome
+ * e caem pra uma segunda linha do MESMO item. Com o gap uniforme de 8px, essa segunda linha
+ * ficava tão longe do nome quanto o item seguinte, e a lista lia como fichas empilhadas em
+ * vez de linhas. 2px cola a ação no que ela age. */
+/* 🔴 `--r-controle` no ITEM: sem ele o realce da seleção era um RETÂNGULO de canto vivo
+ * encostando no recuo interno do painel, num produto em que todo o resto tem raio. O item de
+ * nav do rail — que esta lista já copia de propósito, barra de 2px inclusive — sempre teve o
+ * raio; era o único dos sinais que não tinha sido copiado. */
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: var(--s-3);
+  row-gap: var(--s-1);
+  /* O respiro vertical caiu de `--s-3` pra `--s-2` porque ele MUDOU DE DONO: os outros 4px
+   * foram pro `.itemNome` logo abaixo, virando alvo de clique. A linha fecha na mesma altura
+   * de antes; o que era moldura morta em volta de um botão de 18,8px agora é o botão. */
+  padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4);
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--linha);
+  border-radius: var(--r-controle);
+  flex-wrap: wrap;
+}
+.itemAtivo {
+  border-left-color: var(--acento);
+  background: var(--acento-wash);
+}
+
+.itemNome {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  /* 🔴 `--s-6` (24px) é o piso de alvo de clique da WCAG 2.5.8, e o mesmo degrau que o
+   * `.soIcone.pequeno` do `Botao` usa. Este é o botão que TROCA DE FUNIL — a ação principal
+   * da tela — e ele media 18,8px de altura, porque uma linha de texto de 13/1,45 é só isso e
+   * todo o respiro estava no `padding` do `.item` em volta. Fora do alvo, portanto: clicar no
+   * ar entre duas linhas não fazia nada. */
+  min-height: var(--s-6);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  cursor: pointer;
+  text-align: start;
+}
+.itemLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.itemCheck { color: var(--acento); flex-shrink: 0; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+  background: var(--trilho);
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+
+.itemCount {
+  margin-inline-start: auto;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  color: var(--tinta-3);
+  background: var(--trilho);
+  border-radius: var(--r-pill);
+  padding: var(--s-1) var(--s-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Ações discretas ──────────────────────────────────────────────────────────────────
+ *
+ * 🔴 ERAM BOTÕES COM MOLDURA, e a conta não fechava: cinco etapas × 2 ações + dois funis ×
+ * 2 ou 3 dá DOZE caixas brancas com borda `--linha-forte` numa tela cujo conteúdo são cinco
+ * nomes e quatro números. Doze molduras competindo com o dado é o mesmo problema que a
+ * lista de tipos de atividade já tinha resolvido — e resolveu tirando a moldura de repouso.
+ * Aqui a receita passa a ser a mesma (idêntica ao `.acoes` de `config.module.css`), o que
+ * também acaba com duas telas irmãs de /config discordando sobre como se desenha "Renomear".
+ *
+ * O efeito colateral é o que mais importa: com moldura, "Renomear" + "Excluir" não cabiam na
+ * coluna de 320px da lista de funis e o `flex-wrap` jogava as ações pra uma SEGUNDA LINHA —
+ * cada funil virava um bloco de duas alturas, e a lista parecia uma pilha de fichas em vez
+ * de uma lista. Sem a moldura elas cabem. */
+.itemAcoes,
+.etapaAcoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex-shrink: 0;
+}
+
+/* Só a da ETAPA se ancora na coluna: a do funil vive numa coluna de 320px, onde reservar
+ * largura fixa espremeria o nome. `flex-end` porque o grupo pode ter 2 ou 3 botões
+ * ("Tornar padrão" some no funil que já é padrão) e o que tem que ficar parado é a borda
+ * direita, não a esquerda. */
+.etapaAcoes {
+  width: var(--col-acoes);
+  justify-content: flex-end;
+}
+/* 🔴 Aqui moravam `.itemAcoes button` e `.etapaAcoes button` — <button> NUS, estilizados por
+ * seletor descendente. Viraram `Botao variante="fantasma" tamanho="pequeno"`.
+ *
+ * E com eles morreu uma armadilha que o comentário antigo já avisava em voz alta: o hover
+ * vermelho do destrutivo era `button:last-child`, "porque a ação de excluir é SEMPRE a última".
+ * Um botão novo depois dela pintaria o vizinho de vermelho, em silêncio. Agora o destrutivo
+ * diz `tom="erro"` de si mesmo, e a ordem na linha deixou de ser load-bearing. */
+
+/* ── Editor de etapas ────────────────────────────────────────────────────────── */
+
+.etapaLista {
+  list-style: none;
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.etapaItem {
+  border-bottom: 1px solid var(--linha);
+}
+
+.etapaLinha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  flex-wrap: wrap;
+}
+
+/* Ícone que informa SOZINHO (não tem rótulo ao lado) → `--tinta-3`, não `--icone-mudo`, que é
+ * reservado ao ícone DECORATIVO, o que tem texto colado. */
+.grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: var(--s-1);
+  color: var(--tinta-3);
+  cursor: grab;
+  touch-action: none;
+}
+.grip:active { cursor: grabbing; }
+
+.swatchWrap { position: relative; flex-shrink: 0; }
+
+.swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pequeno);
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.swatch:disabled { cursor: not-allowed; opacity: 0.6; }
+
+/* 🔴 A ÚNICA sombra do arquivo. Popover: abre sobre o conteúdo, logo `var(--elev-2)` e
+ * nunca um rgba() solto. O que estava aqui era o pior dos dois mundos: o token de sombra de
+ * CARD do v1 com um rgba de POPOVER no fallback — ou seja, a sombra mudava de tamanho
+ * conforme o token existisse ou não, e ninguém saberia qual das duas estava vendo. */
+.paleta {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--s-2));
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-2);
+}
+.corBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pequeno);
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+/* Sem o halo de `box-shadow` do v1 (sombra fingindo estado): a borda de 2px em `--tinta` já é
+ * o anel, e ela funciona sobre qualquer uma das 8 cores da paleta. */
+.corBtnAtiva { border-color: var(--tinta); }
+
+.etapaNome {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.etapaCount {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  color: var(--tinta-3);
+  background: var(--trilho);
+  border-radius: var(--r-pill);
+  padding: var(--s-1) var(--s-3);
+  font-variant-numeric: tabular-nums;
+  /* Largura fixa pra casar com a coluna "Negócios" do cabeçalho. */
+  min-width: 66px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* ── Mover-e-excluir ─────────────────────────────────────────────────────────── */
+
+/* `--trilho`: é moldura de AGRUPAMENTO (a confirmação de exclusão de UMA etapa, dentro da
+ * linha dela), não conteúdo. O select por dentro continua branco. */
+.mover {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding: var(--s-3);
+  margin-bottom: var(--s-3);
+  background: var(--trilho);
+  border-radius: var(--r-pequeno);
+}
+.moverLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+/* Chance % e Prazo por etapa — inputs curtos na linha da etapa. */
+/* Envelope do input curto: segura o sufixo de unidade (% / d) dentro da caixa, pra
+   unidade ficar colada no número em vez de depender só do cabeçalho. */
+.campoCurto {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 76px;
+  flex-shrink: 0;
+}
+.sufixo {
+  position: absolute;
+  right: 7px;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  color: var(--tinta-3);
+  pointer-events: none;
+}
+
+/* Cabeçalho de colunas do editor de etapas — a segunda (e última) exceção da escala ao peso
+   600. Sem o padding lateral de 11px do v1: aquele número era `padding (10) + borda (1)` da
+   `.etapaItem`, e a `.etapaItem` não tem mais nem padding nem borda lateral. */
+.etapaCabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 0 var(--s-2);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+/* 24 + 32 = os 56px do recuo real da `.etapaLinha`: grip (20) + gap (8) + swatch (20) +
+   gap (8). Expresso em tokens porque 56 não está na escala de espaço — e um literal aqui
+   também não sobreviveria à barreira de escala do kit. */
+.colEtapa { flex: 1 1 auto; min-width: 0; padding-left: calc(var(--s-6) + var(--s-7)); }
+.colNum { width: 66px; flex-shrink: 0; text-align: center; }
+.colCampo { width: 76px; flex-shrink: 0; text-align: center; }
+/* Largura real de "Renomear" + "Excluir": é ela que ancora as colunas à direita. */
+.colAcoes { width: var(--col-acoes); flex-shrink: 0; }
+
+/* Abaixo de 720px a `.etapaLinha` quebra em várias linhas, então o cabeçalho de
+   colunas deixa de alinhar e vira ruído sobreposto. Quem rotula os campos aqui é o
+   sufixo dentro da caixa (% / d) mais a legenda abaixo da lista.
+   Precisa vir DEPOIS da definição de `.etapaCabecalho` — mesma especificidade, quem
+   aparece por último vence. */
+@media (max-width: 720px) {
+  .etapaCabecalho { display: none; }
+}
+
+/* Explica os dois campos curtos e amarra a chance à Previsão de fechamento. */
+.legenda {
+  margin: var(--s-4) 0 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+.legenda strong { font-weight: 500; color: var(--tinta-2); }
+
+/* ── Foco: UM anel, em tudo ─────────────────────────────────────────────────── */
+.itemNome:focus-visible,
+.grip:focus-visible,
+.swatch:focus-visible,
+.corBtn:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

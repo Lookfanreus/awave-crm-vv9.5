@@ -1,0 +1,786 @@
+/* globals.css — fundação de estilo do Awave CRM.
+ *
+ * Os tokens abaixo SÃO a fonte de verdade do design system: componentes referenciam SÓ
+ * var(--…), nunca hex solto. Aqui: os DOIS conjuntos de token + reset básico + body
+ * on-brand + os controles nativos.
+ *
+ * ═══════════════ DOIS CONJUNTOS, UM VOCABULÁRIO ═══════════════
+ * O `:root` sozinho é o tema ESCURO, que é o padrão do produto. O tema claro vive em
+ * `:root[data-tema="claro"]` e redefine SÓ cor e elevação.
+ *
+ * 🔴 ESCURO É A AUSÊNCIA DO ATRIBUTO, de propósito. Se a leitura da preferência falhar, o
+ * `<html>` sai sem `data-tema` e a página cai no `:root` — que está completo. A alternativa
+ * (`data-tema="escuro"` explícito) faria qualquer valor corrompido virar um atributo que não
+ * casa seletor nenhum, e a tela chegaria SEM COR.
+ *
+ * ⚠️ NENHUM módulo CSS sabe em que tema está, e é assim que tem que continuar. Um
+ * `[data-tema="claro"] .minhaClasse` num módulo faz o tema virar problema de cada tela — que
+ * é exatamente o que estes dois blocos existem pra impedir. Quem precisar de valor diferente
+ * por tema pede um TOKEN novo aqui.
+ *
+ * ⚠️ Escala tipográfica, espaço, densidade, raio e movimento NÃO se repetem no bloco claro:
+ * eles são iguais nos dois temas, e repeti-los é convite a divergirem em silêncio.
+ *
+ * ═══════════════ A REGRA DE CONTENÇÃO — TUDO TEM CAIXA ═══════════════
+ * 🔴 ESTA REGRA FOI INVERTIDA, e o texto anterior dizia o CONTRÁRIO. Ele dizia "quase nada
+ * tem caixa": conteúdo direto sobre a página, separado por ESPAÇO e por filete de 1px, e
+ * superfície própria só pra quem flutua (drawer, popover) ou contém pilha rolável (coluna de
+ * kanban). Quem obedeceu aquela regra deixou o produto com todo bloco em `transparent`,
+ * `border: 0`, `radius: 0`, `shadow: none` — a tinta nova sobre o desenho velho.
+ *
+ * A REGRA DE HOJE: **todo bloco de conteúdo é um PAINEL.** Superfície própria, borda de
+ * 1px, raio e elevação de repouso — sempre os quatro juntos, sempre por token:
+ *
+ *     background: var(--superficie);
+ *     border: 1px solid var(--linha);
+ *     border-radius: var(--r-painel);
+ *     box-shadow: var(--elev-1);
+ *
+ * É disso que vem a leitura de "software", e não de "relatório impresso": a separação volta a
+ * ser por PLANO (superfície + sombra), não por linha de 1px sobre o chão. O rail é um painel
+ * como qualquer outro — ele FLUTUA, com folga em volta, e não encosta na borda da janela.
+ *
+ * ⚠️ O que NÃO ganha caixa continua sem: linha de lista dentro do painel, célula de tabela,
+ * rótulo, chip. Caixa dentro de caixa dentro de caixa é o defeito oposto, e ele também tem
+ * nome — o cartão do kanban é `--superficie-alta` DENTRO da coluna justamente pra não repetir
+ * o mesmo plano duas vezes.
+ *
+ * ⚠️ E o espaço entre blocos ENCOLHEU junto: com caixa, quem separa dois blocos é a borda de
+ * cada um, então o vão entre eles é o `gap` do container (12px) e nada mais. Os 32px que a
+ * regra antiga pedia eram o espaço fazendo o trabalho que a borda não fazia. Se você achar um
+ * `margin-bottom` somando com o `gap` pra chegar a 32, ele é resto da regra morta.
+ *
+ * --font-sans é definido SÓ pelo next/font, na classe do <html> em layout.tsx — não
+ * redefina aqui. Mesma especificidade (0,1,0) + import depois no layout faria o globals
+ * ganhar, e a família de fallback com métricas ajustadas ("geist Fallback") sumiria da pilha
+ * em silêncio (ver tokens-css.spec.ts). É ela que o navegador desenha até o arquivo da fonte
+ * chegar, com largura de texto próxima da real (medido: variação ≤ 3,6% inline; o
+ * deslocamento vertical já é zero por causa da grade).
+ *
+ * 🔴 E escrever "a fonte certa" aqui NÃO conserta — MEDIDO no navegador: `font-family: Geist`
+ * casa a família que o next/font gera, que se chama `geist` minúsculo, porque nome de família
+ * em CSS não diferencia caixa. Ou seja, a tela continua mostrando a fonte certa e só o
+ * fallback métrico morre. É por isso que a regra é "não redefina", e não "redefina igual". */
+
+:root {
+  /* 🔴 `color-scheme` NÃO é enfeite: é ele que faz a barra de rolagem, o dropdown do
+   * `<select>`, o seletor de data e o autofill do navegador seguirem o tema. Sem esta linha
+   * o bloco "Controles nativos" lá embaixo entrega um dropdown BRANCO por cima de um app
+   * escuro — e nenhuma regra nossa alcança o widget que o navegador desenha sozinho. */
+  color-scheme: dark;
+
+  /* ═══════════════════ O CONJUNTO ESCURO — o padrão do produto ═══════════════════
+   * ESTE bloco é a especificação de cor do produto. Nome, valor e papel de cada token estão
+   * escritos ao lado, e quem os prova é o teste.
+   *
+   * Os números de contraste nos comentários foram MEDIDOS, não estimados, e a barreira de
+   * contraste lê estes hex do disco — hex reprovado em AA colocado aqui derruba a suíte na
+   * hora. */
+
+  /* ---- Superfície: TRÊS camadas, do chão pro que flutua ----
+   * 🔴 NEUTRO PURO NÃO, e a mudança em relação ao kit anterior é deliberada: os cinzas têm um
+   * viés frio mínimo (o azul fica ~6 pontos acima do vermelho em 8 bits). No escuro, neutro
+   * absoluto lê como fotografia mal exposta; o viés frio é o que separa "preto de tela" de
+   * "preto de tinta". A regra que continua valendo é a de SATURAÇÃO BAIXA: um quase-neutro na
+   * faixa dos 14% dispara contraste simultâneo ao lado de cor saturada, e num CRM cheio de
+   * status colorido a moldura tem que ser inerte.
+   *
+   * A divisão em três é o que dá volume sem sombra: o chão é a página, a superfície é o
+   * painel, a alta é o que se levanta dentro dele (popover, item elevado, cabeçalho fixo).
+   *
+   * ⚠️ A separação ENTRE as camadas é medida em décimos, não em unidades: 1,06 do chão pra
+   * superfície e 1,12 do chão pra alta. É pouco de propósito — camada é hierarquia, não
+   * contraste —, mas é pouco o bastante pra sumir em monitor mal calibrado. Quem depende
+   * SÓ da diferença de superfície pra delimitar um objeto está construindo em cima de nada:
+   * o que delimita é `--linha-forte`, e no escuro também o `--realce`. */
+  --fundo:            #08080B;  /* a PÁGINA — o chão de tudo */
+  --superficie:       #101016;  /* painel, cartão, drawer: um plano em cima do chão — 1,06 vs --fundo */
+  --superficie-alta:  #17171F;  /* o que se levanta dentro do painel — 1,12 vs --fundo */
+  --superficie-hover: #17171F;  /* hover de linha de lista sobre o painel */
+
+  /* ---- Trilho: o poço, o que AFUNDA em vez de levantar ----
+   * Trilho de segmented, poço de coluna do kanban, badge, campo não-editável. É a única
+   * família que vai pro lado mais claro no escuro E no claro — poço não é "mais escuro", é
+   * "diferente da superfície que o contém". */
+  --trilho:       #1F1F29;
+  --trilho-hover: #26262F;
+
+  /* ---- Linhas e realce: separados por FREQUÊNCIA de uso ----
+   * Alfa e não hex: filete que se repete tem que funcionar sobre as TRÊS superfícies, e um
+   * hex fixo só acerta uma delas. Os números são contra --superficie. */
+  --linha:       rgba(255, 255, 255, .075);  /* 1,20 — divisor que se repete (lista, tabela) */
+  --linha-forte: rgba(255, 255, 255, .13);   /* 1,42 — borda do que CONTÉM: input, cartão, drawer */
+
+  /* O filete INTERNO de luz (`box-shadow: inset 0 1px 0`), no topo do que é elevado. É ele
+   * que dá volume no escuro, onde sombra sozinha não aparece — sombra escurece, e escurecer
+   * o que já é escuro não desenha borda nenhuma. No claro ele não tem trabalho: por isso lá
+   * vale `transparent`, e não um branco que ninguém veria. */
+  --realce: rgba(255, 255, 255, .06);  /* 1,14 */
+
+  /* ---- Texto: TRÊS tons, todos AA nas CINCO superfícies ----
+   * NÃO existe um quarto tom "sutil". O tom mais apagado que estes já carregou o texto de
+   * estado vazio a 2,58:1 — a única instrução pra quem abre o app sem dados. Cinza mais claro
+   * que `--tinta-3` daqui pra frente é LINHA ou ÍCONE, categorias que ninguém usa pra
+   * escrever.
+   *
+   * 🔴 Os números são contra --fundo · --superficie · --superficie-alta · --trilho ·
+   * --trilho-hover, e as duas últimas entraram porque foram as ÚNICAS que reprovaram. O
+   * `--tinta-3` era #82828F: passava nas três primeiras e caía a 3,95 sobre o
+   * `--trilho-hover` — que é exatamente onde moram o rótulo de segmented inativo e o badge de
+   * contagem. Texto não sabe em que superfície vai cair, então o piso vale na PIOR delas.
+   *
+   * ⚠️ O preço é a rampa APERTAR: a separação entre `--tinta-2` e `--tinta-3` caiu de 1,50
+   * pra 1,25 aqui (e de 1,36 pra 1,15 no claro). É preço aceito, e a regra é a de sempre — um
+   * `--tinta-3` que reprova numa superfície real É o quarto tom sutil com outro nome, que é o
+   * erro que estes três tons nasceram corrigindo. Legibilidade em todo lugar ganha de
+   * separação máxima. */
+  --tinta:   #F6F6F8;  /* 18,53 · 17,56 · 16,51 · 15,13 · 13,89 */
+  --tinta-2: #A2A2B0;  /*  7,94 ·  7,52 ·  7,07 ·  6,48 ·  5,95 */
+  --tinta-3: #90909C;  /*  6,34 ·  6,01 ·  5,65 ·  5,17 ·  4,75 */
+
+  /* ---- A tinta de quando o CHÃO é cor cheia, não superfície ----
+   * O rótulo do botão primário, o do botão destrutivo, o glifo do lockup.
+   *
+   * 🔴 NO ESCURO ELA É ESCURA, e isso é ARITMÉTICA, não gosto. Sobre fundo escuro um acento
+   * não consegue ser as duas coisas ao mesmo tempo:
+   *   · legível como TEXTO sobre --superficie-alta exige luminância >= 0,202;
+   *   · ter BRANCO legível por cima exige luminância <= 0,183.
+   * Não existe valor que satisfaça os dois. Medido: um índigo de luminância intermediária dá
+   * 4,10 como texto e 4,35 sob branco — reprova NOS DOIS. Clarear conserta um e piora o
+   * outro; escurecer, o inverso.
+   *
+   * A saída é a que o token já descrevia: "a tinta de quando o chão é cor cheia" passa a ser
+   * um valor POR TEMA. Com ela escura, o acento pode clarear à vontade e a rampa escura fica
+   * MONÓTONA (acento → hover → ativo, sempre mais claro), que também é o feedback certo —
+   * apertar aproxima.
+   *
+   * ⚠️ Voltar a branco aqui move TRÊS coisas juntas: o `--acento` escuro teria que escurecer
+   * (e perderia AA como texto, exigindo um segundo token só pra link), o `--acento-ativo`
+   * voltaria a recuar, e o derivador da cor de marca inverteria a direção. Não é uma linha
+   * de CSS: é a forma da rampa.
+   *
+   * ⚠️ NÃO é "preto": é `--fundo` clareado o suficiente pra não somar com a sombra do botão. */
+  --tinta-invertida: #0B0B12;  /* 5,56 acento · 6,67 hover · 7,73 ativo · 7,07 erro · 10,12 ok · 10,88 aviso */
+
+  /* ---- A tinta de quando o chão NÃO É DO TEMA ----
+   * Hoje só o disco do avatar: um degradê DERIVADO do nome (`src/lib/avatar.ts`), 360 matizes
+   * que token nenhum pode representar.
+   *
+   * 🔴 BRANCA NOS DOIS TEMAS, e por isso fica FORA do bloco claro — mesma razão do
+   * `--rampa-fim` e do `--marca-fim` mais abaixo. Temá-la É o bug que ela existe pra impedir:
+   * o `avatar.ts` escolhe a lightness de cada matiz como a MAIOR que ainda dá 4,5:1 CONTRA
+   * BRANCO (`LUM_MAXIMA`), ou seja aquele chão carrega uma garantia PRÓPRIA, e ela é contra
+   * branco. Medido com `--tinta-invertida` no escuro (tinta escura sobre um chão desenhado
+   * pra tinta branca): as iniciais caíam a 2,42–3,91 no meio do degradê e a 1,87 contra a
+   * parada mais escura — sumiam, em todas as telas. Com branco: 4,51–4,66 no pior ponto.
+   *
+   * ⚠️ NÃO é sinônimo de `--tinta-invertida`, e a diferença é o chão. Aquela responde a cor
+   * cheia DO TEMA (botão primário, destrutivo) e muda com ele porque o chão dela muda. Se o
+   * seu chão sai de um token, você quer a outra. */
+  --tinta-sobre-derivado: #FFFFFF;
+
+  /* ---- O objeto que DESLIZA sobre um trilho de cor — hoje só o polegar do interruptor ----
+   *
+   * 🔴 BRANCO NOS DOIS TEMAS, e por isso fica fora do bloco claro, como os três acima e abaixo.
+   * A regra que ele carrega é de CONVENÇÃO, não de contraste: o polegar é a peça que se move, e
+   * peça que se move lê como objeto EM CIMA do trilho quando é a coisa mais clara do controle.
+   * Ele usava `--superficie` — branco no claro (certo por acidente) e `#101016` no escuro, ou
+   * seja mais ESCURO que o trilho nos dois estados. Medido: 3,69 ligado e 4,32 desligado, os
+   * dois acima do piso de 3 de objeto gráfico — não era falha de acessibilidade, era o polegar
+   * lendo como FURO no trilho em vez de botão.
+   *
+   * ⚠️ NENHUM token existente servia, e os dois candidatos óbvios erram em direções opostas:
+   * `--tinta-invertida` é ESCURA no escuro (por aritmética — ver a nota dela), o que é o defeito
+   * elevado a token; e `--tinta-sobre-derivado`, apesar de ser branca nos dois temas, é
+   * explicitamente a tinta de quando o chão NÃO É DO TEMA — o trilho daqui é `--acento` ou
+   * `--icone-mudo`, os dois do tema.
+   *
+   * ⚠️ O piso ainda é conferido, porque branco sobre acento CLARO é o caso apertado: 3,53 sobre
+   * o `--acento` escuro do kit, e 3,69 no pior acento que a derivação de marca consegue produzir
+   * (varredura de toda cor que o portão aceita). Ambos acima de 3 (WCAG 1.4.11).
+   *
+   * ⚠️ "Trilho" aqui é o trilho DO INTERRUPTOR, não o token `--trilho` (que é o poço). */
+  --polegar: #FFFFFF;
+
+  /* ---- Ícone DECORATIVO — nunca texto, nunca ícone que informa sozinho ----
+   * O piso de 3:1 aqui é decisão de DESIGN, não exigência da WCAG (a 1.4.11 isenta gráfico
+   * decorativo). Só use onde existe RÓTULO DE TEXTO ao lado: ícone que informa sozinho
+   * (botão só-de-ícone, ícone de status) vai de `--tinta-3`. */
+  --icone-mudo: #7A7A88;  /* 4,73 · 4,48 · 4,21 · 3,86 · 3,55 — as cinco superfícies, piso 3 */
+
+  /* ---- Acento: nomeado por PAPEL, nunca por peso ----
+   * 🔴 `hover` e `ativo` descrevem o ESTADO DA INTERAÇÃO, que não muda com o tema. Nomes como
+   * "forte"/"fraco" estariam errados em exatamente um dos dois temas, sempre: aqui no escuro
+   * o hover CLAREIA (senão some), e no claro ele ESCURECE.
+   *
+   * A rampa escura é MONÓTONA — cada estado se afasta mais do fundo — porque o rótulo do
+   * botão primário é `--tinta-invertida`, que aqui é escura: recuar no `ativo` derrubaria a
+   * legibilidade do próprio rótulo.
+   *
+   * ⚠️ Os três números são contra --fundo · --superficie · --superficie-alta, e NÃO contra as
+   * cinco da rampa de tinta. Cor de acento e cor semântica não caem no `--trilho`: o que mora
+   * lá é texto NEUTRO (rótulo de segmented, badge de contagem, campo não-editável). O chão
+   * delas é a superfície ou o `-wash` correspondente, e é isso que a barreira mede. */
+  --acento:       #8B72FF;  /* 5,67 · 5,37 · 5,05 */
+  --acento-hover: #9B84FF;  /* 6,80 · 6,44 · 6,06 */
+  --acento-ativo: #A594FF;  /* 7,89 · 7,47 · 7,02 */
+
+  /* Chip, seleção, hover suave e a borda do item selecionado. Alfa em vez de hex porque eles
+   * aparecem sobre as três superfícies.
+   *
+   * 🔴 8%, e NÃO os 14% que a direção nova trazia. O par crítico é o texto sobre o PRÓPRIO
+   * wash — um chip de acento tem rótulo de acento em cima — e a 14% ele dava 4,56 aqui e
+   * 4,48 no claro, ou seja o claro REPROVAVA. Baixar a opacidade conserta os dois lados e
+   * ainda sobra folga: 4,61 aqui, NO PIOR chão. A regra que vem junto é antiga e continua
+   * valendo: mexeu na cor, meça o wash de novo; mexeu no wash, meça a cor.
+   *
+   * ⚠️ 4,61 e não 4,93: o 4,93 era a composição sobre `--superficie` só, e o wash é
+   * TRANSPARENTE — o pior chão do escuro é `--superficie-alta`, porque aqui a tinta é clara e
+   * chão escuro ajuda (no claro é o oposto, o pior é `--fundo`). A folga é menor do que este
+   * comentário afirmava; ela só nunca reprovou.
+   *
+   * `--acento-linha` fica em 30% — borda não é texto, e ela precisa aparecer. */
+  --acento-wash:  rgba(139, 114, 255, .08);  /* --acento sobre ele: 4,61 no PIOR chão */
+  --acento-linha: rgba(139, 114, 255, .30);
+
+  /* ---- Semânticos: o MESMO valor serve pra texto e pra ponto/barra ----
+   * Os três `-wash` saem por `color-mix` do par correspondente, e não de um hex próprio:
+   * assim eles acompanham um rebranding da paleta sem exigir tabela nova, e nunca divergem
+   * do tom que rotulam. Mesma opacidade do `--acento-wash`, e pelo mesmo motivo. */
+  --ok:    #00D492;  /* 10,32 ·  9,78 · 9,19 */
+  --erro:  #FF6B6B;  /*  7,21 ·  6,83 · 6,42 */
+  --aviso: #FFB224;  /* 11,09 · 10,51 · 9,88 */
+  /* Os números do wash são o par sobre o PIOR chão — aqui a superfície mais CLARA
+   * (`--superficie-alta`), porque no escuro a tinta é clara e um chão mais escuro só AJUDA. É o
+   * espelho exato do claro, onde o pior é `--fundo`. */
+  --ok-wash:    color-mix(in srgb, var(--ok) 8%, transparent);     /* --ok sobre ele: 8,09 */
+  --erro-wash:  color-mix(in srgb, var(--erro) 8%, transparent);   /* --erro sobre ele: 5,77 */
+  --aviso-wash: color-mix(in srgb, var(--aviso) 8%, transparent);  /* --aviso sobre ele: 8,57 */
+
+  /* ---- Cor de DADO e cor de MARCA — as duas únicas que NÃO mudam com o tema ----
+   *
+   * 🔴 `--rampa-fim` NÃO É LIXO, apesar de nenhum CSS o ler. Ele é a FONTE CANÔNICA da rampa
+   * do funil: o hex vive duplicado em src/lib/rampa.ts, e o teste da rampa amarra os dois
+   * lendo ESTE arquivo. Removê-lo por "ninguém usa" (a leitura é de teste, não de `var()`)
+   * quebra a suíte e desliga a única amarra entre o TS da rampa e a paleta.
+   * Ele é DADO (posição no funil), nunca texto — a cor carrega a posição, e quem precisar
+   * rotular a etapa usa `--tinta`/`--tinta-2` ao lado.
+   *
+   * ⚠️ Ele fica FORA do bloco claro de propósito: a rampa é UMA só. O começo dela é a cor de
+   * marca, que o TS resolve num valor único; dois fins fariam a mesma etapa mudar de cor
+   * conforme o tema de quem olha, e a cor ali É o dado.
+   *
+   * `--marca-fim` é a ponta roxa do lockup (`linear-gradient(145deg, <acento>, var(--marca-fim))`).
+   * Também fica fora do bloco claro: a assinatura da marca não rebranda por tema. Ela NÃO é
+   * cor de interface — se o seu uso não é o lockup, é errado.
+   *
+   * ⚠️ O degradê ser CHAPADO em luminância é o certo, não um defeito: ele é um giro de MATIZ,
+   * e variar luminância num degradê de marca é o que produz aquela faixa suja no meio. O par
+   * anterior media 1,005 entre as pontas; o de hoje mede 1,010. Não há regressão aí.
+   *
+   * 🔴 O QUE HÁ é que NENHUMA das duas tintas serve no degradê INTEIRO do escuro, porque ele
+   * vai de um acento clareado a um roxo fixo. Medido:
+   *     branco     sobre o acento escuro 3,53  ·  sobre --marca-fim 5,11
+   *     --tinta-invertida (escura) 5,56         ·                   3,84
+   * Ou seja: nenhuma das duas bate 4,5 no degradê inteiro. A saída é do COMPONENTE (contorno,
+   * sombra de texto, encurtar o degradê, glifo em cor sólida), não da paleta, e fica pro
+   * redesenho do lockup. Não invente token novo pra isso.
+   *
+   * 🔴 E o lockup NÃO leva o conserto do avatar, apesar de parecer o mesmo caso. A tabela
+   * acima é a razão: como glifo, o piso é 3 (WCAG 1.4.11, objeto gráfico) e as DUAS tintas
+   * passam — só que a de hoje passa MELHOR. Trocar por branco fixo levaria o pior ponto do
+   * degradê escuro de 3,84 para 3,53, ou seja pioraria o número pra "consertar" um defeito que
+   * o avatar tinha e este não: lá o chão é derivado por nome com garantia contra branco e o
+   * texto é TEXTO (piso 4,5, medido em 1,87); aqui metade do chão é `--acento`, que é do tema,
+   * e o glifo não escreve nada. Semelhança conceitual não é o mesmo par medido. */
+  --rampa-fim: #00C2A8;  /* 8,84 · 8,38 · 7,87 no escuro; 2,11 · 2,26 · 2,17 no claro — não é texto */
+  --marca-fim: #6E4BFF;  /* 3,92 · 3,71 · 3,49 no escuro — é degradê de assinatura, não texto */
+
+  /* ---- O VÉU: o scrim que apaga a página atrás do que é modal ----
+   * Gaveta lateral e gaveta de navegação do mobile. Um só, e por isso um TOKEN: os dois
+   * traziam o valor à mão, com alfas diferentes (.32 e .45) que ninguém escolheu — e os dois
+   * traziam o MESMO `rgb(13, 20, 32)`, que é uma tinta do kit v1 que já não existe.
+   *
+   * 🔴 PRETO NO ESCURO, TINTA NO CLARO — e a assimetria é o defeito que este token conserta.
+   * O véu literal era idêntico nos dois temas, e no escuro ele não escurecia NADA: medido,
+   * 1,02 sobre `--fundo`, 1,01 sobre `--superficie` — e sobre a superfície ele CLAREAVA, ou
+   * seja o scrim iluminava o que devia apagar (aquele azul-ardósia é mais claro que qualquer
+   * superfície escura do kit). A gaveta abria sem nenhuma separação do que estava atrás.
+   *
+   * ⚠️ Contraste aqui é medido como DELTA (o quanto a página muda), não como legibilidade —
+   * não há texto sobre o véu. E no escuro esse delta é pequeno por FÍSICA: o `--fundo` já está
+   * a 3% do preto, então não existe para onde escurecer. Com preto a 70% o véu vai de 1,04
+   * (sobre `--fundo`) a 1,22 (sobre `--trilho`), sempre na direção certa, e o painel do drawer
+   * passa a ser a coisa mais CLARA da tela — que é o que faz a gaveta ler como o plano de
+   * cima. Quem termina o trabalho é o `--elev-2` logo abaixo.
+   *
+   * No claro é a `--tinta`, só diluída: um preto puro sobre branco lê como sujeira cinza. */
+  --veu: rgba(0, 0, 0, .7);
+
+  /* ---- Elevação: DOIS degraus, e no escuro a sombra tem que ser bem mais forte ----
+   * `--elev-1` é repouso de painel e cartão; `--elev-2` é o que flutua DE VERDADE (popover,
+   * drawer, menu). No escuro a sombra sozinha quase não aparece — quem desenha a borda
+   * superior do que é elevado é o `--realce`, não a sombra.
+   *
+   * ⚠️ O `--elev-1` nasceu ÓRFÃO: ele foi criado pra esta regra e ficou sem um único leitor
+   * enquanto a regra de contenção estava invertida (nada tinha caixa, logo nada tinha repouso).
+   * Hoje ele é a quarta linha da receita de painel lá do topo. Se ele voltar a não ter leitor
+   * nenhum, a regra foi desobedecida em algum lugar — não é ele que sobra. */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --elev-2: 0 2px 4px rgba(0, 0, 0, .35), 0 12px 32px rgba(0, 0, 0, .45);
+
+  /* ═══════ Daqui pra baixo NADA muda com o tema — não repita no bloco claro ═══════ */
+
+  /* ---- Tipografia: CINCO tamanhos, nenhum passo abaixo de 1,18 ----
+   * Uma escala anterior tinha 12 tamanhos com passos de 1px (razão 1,07–1,09), abaixo do
+   * limiar perceptivo — cinco tamanhos que pareciam o mesmo. O intervalo pequeno tem DOIS: 11
+   * (só caixa alta) e 13. "Secundário" é dito por COR, não por tamanho.
+   *
+   * ⚠️ O TRACKING está afinado pra a família tipográfica NOVA, que ainda não entrou no
+   * bundle — hoje o texto renderiza na antiga e fica um pouco solto nos tamanhos grandes.
+   * É de propósito: escrever a escala uma vez agora e outra quando a fonte chegar seria
+   * churn, e a tabela é a especificação, não a renderização de hoje. A direção é sempre a
+   * mesma — quanto maior o corpo, mais negativo o tracking; caixa alta minúscula é o único
+   * lugar onde ele é POSITIVO, porque letra grande espaçada é o que torna versalete legível.
+   *
+   * ⚠️ `--ls-body` é lido por NINGUÉM e FICA. Ele não é um degrau solto: é uma célula da
+   * tabela 5×3 abaixo, e é a tabela inteira, lida como tabela, que É a especificação da
+   * escala. O `0` ali afirma "corpo não tem tracking" — e a ausência de `letter-spacing` nos
+   * 30+ blocos de texto de 13px do produto é essa afirmação sendo OBEDECIDA. Apagar a célula
+   * deixaria o tracking do corpo sem valor declarado em lugar nenhum, e o próximo autor teria
+   * que adivinhar entre `normal`, `0` e o `--ls-micro` da linha de cima. */
+  --fs-micro:  11px; --lh-micro:  1.3;  --ls-micro:   0.08em;
+  --fs-body:   13px; --lh-body:   1.45; --ls-body:    0;
+  --fs-title:  16px; --lh-title:  1.3;  --ls-title:  -0.015em;
+  --fs-page:   24px; --lh-page:   1.2;  --ls-page:   -0.03em;
+  --fs-metric: 29px; --lh-metric: 1.05; --ls-metric: -0.04em;
+
+  /* ---- Os DOIS degraus de tracking ACIMA do `--ls-micro` ----
+   * 🔴 Todo rótulo em caixa alta do produto saía de um token só, o `--ls-micro` a .06em — e são
+   * TRÊS papéis com necessidades diferentes. A regra: quanto mais CURTO e mais SOZINHO o rótulo,
+   * mais tracking ele aguenta e precisa pra ler como versalete em vez de palavra apertada. Um
+   * token servindo três papéis não é economia; é os três ficarem errados no mesmo valor médio.
+   *
+   *   · `--ls-micro` (.08em) é o degrau BASE: cabeçalho de raia do kanban e de tabela. É o mais
+   *     apertado dos três de propósito — é o único que carrega texto de comprimento
+   *     IMPREVISÍVEL (nome de etapa é escrito pelo comprador) e o único que reticencia. Alargar
+   *     aqui custa caractere na tela, não só ar.
+   *   · `--ls-rotulo-metrica` (.11em): o rótulo do KpiCard. Fica sozinho em cima de um número
+   *     grande, e precisa de ar pra não competir com ele.
+   *   · `--ls-rotulo-secao` (.13em): o rótulo de seção da navegação ("DIA A DIA", "CADASTROS").
+   *     O mais espaçado porque é o mais curto e o mais estrutural — ele separa grupos, não
+   *     descreve dado.
+   *
+   * ⚠️ Não vêm com `--fs`/`--lh` próprios: os três papéis compartilham o corpo de 11px e a
+   * entrelinha de 1,3 do `--*-micro`. O que muda entre eles é SÓ o tracking. */
+  --ls-rotulo-metrica: 0.11em;
+  --ls-rotulo-secao:   0.13em;
+
+  /* ⚠️ Os dois degraus grandes mudaram junto com a inversão da regra de contenção, e a
+   * direção é OPOSTA em cada um:
+   *   · `--fs-page` subiu de 21 pra 24 (tracking de −.025 pra −.03). A 21 o título de página
+   *     era menor que o rótulo de qualquer bloco somado ao seu peso, e sem caixa nenhuma na
+   *     tela ele não tinha o que ancorar. Com painéis, o título é a única coisa FORA das
+   *     caixas: ele precisa carregar a página sozinho.
+   *   · `--fs-metric` DESCEU de 30 pra 29. O número do KPI passou a ter uma caixa própria em
+   *     volta, e caixa já é ênfase — 30 dentro de um painel de 16px de padding lia inflado.
+   * Os dois valores são os do protótipo aprovado. Passo `--fs-page` → `--fs-metric` = 1,21,
+   * ainda acima do limiar de 1,18 que a escala exige. */
+
+  /* ---- Raio: {6, 10, 14, pílula} ----
+   * Os quatro degraus subiram junto com a direção nova (era {4, 6, 8}), e por isso os NOMES
+   * mudaram: manter `--r-control` valendo outra coisa faria toda tela já escrita mudar de
+   * silhueta sem ninguém revisar. Raio maior é o que separa "caixa de formulário" de
+   * "superfície de software"; abaixo de 6 o canto some e o objeto vira retângulo de tabela. */
+  --r-pequeno:  6px;    /* tile de ícone, thumb, barra */
+  --r-controle: 10px;   /* botão, input, select, chip */
+  --r-painel:   14px;   /* card, painel, poço, drawer */
+  --r-pill:     999px;  /* avatar, badge de contagem */
+
+  /* ---- Espaço: escala de 4px, sem exceções ----
+   *
+   * ⚠️ `--s-8` (48px) é lido por NINGUÉM hoje e FICA. Escala com falha no meio é pior que
+   * degrau não usado: quem precisar de 48 e não achar o degrau vai escrever `48px` à mão — que
+   * a barreira de escala até aceita, porque 48 está na lista de espaçamentos permitidos — e o
+   * próximo escreve `44px`, que ela reprova, e a conversa vira "por que 48 pode e 44 não". O
+   * degrau existir é o que responde isso sem ninguém precisar perguntar. Custo de manter: uma
+   * linha. Custo de tirar: a primeira tela que precisar de um respiro grande. */
+  --s-1: 2px;  --s-2: 4px;  --s-3: 8px;  --s-4: 12px;
+  --s-5: 16px; --s-6: 24px; --s-7: 32px; --s-8: 48px;
+
+  /* ---- Layout ---- */
+  /* 244, não 240: a barra lateral ganhou o seletor de workspace (largura cheia, com borda) e o
+   * menu do usuário, que a top bar sustentava até ela morrer. Quatro pixels não são gosto — são
+   * o que devolve ao nome do workspace o espaço que a borda do controle passou a consumir. */
+  --barra-w:     244px;
+  /* ⚠️ `--pad-page` e `--gutter` PERDERAM o último leitor quando a regra de contenção foi
+   * invertida, e ficam — com o motivo escrito, que é o que os separa de lixo. Os dois eram a
+   * moldura de uma página SEM caixa: 24px de margem em volta do texto solto e 16 entre blocos
+   * que só o espaço separava. Com painéis, a margem externa é a folga do `.shell` (12px, e é
+   * ela que faz o rail flutuar) e o vão entre blocos é o `gap` de 12 — os dois números do
+   * protótipo aprovado.
+   *
+   * 🔴 NÃO os devolva ao `app-shell` "pra dar respiro": 24px ali SOMAM com os 16 de dentro do
+   * painel e afastam o dado da borda em 40px, que é o defeito que a caixa nasceu resolvendo.
+   * Eles seguem sendo a moldura certa pra uma página que NÃO tenha painel nenhum — se um dia
+   * nenhuma tela for assim, aí sim eles saem, junto com a linha deles no anexo de tokens. */
+  --pad-page:    24px;
+  --gutter:      16px;
+  /* Teto do conteúdo (o `app-shell` usa), pra a linha de texto não virar uma faixa de 2000px
+   * em monitor ultrawide. Não é cor nem escala, então a remodelação não muda o valor. */
+  --content-max: 1440px;
+
+  /* ---- Densidade ---- */
+  --h-row:     36px;  /* linha de lista/tabela */
+  --h-nav:     30px;  /* item de navegação */
+  --h-control: 32px;  /* botão, input, select */
+  /* ⚠️ Continua sem existir um `--pad-painel`, e agora é escolha, não consequência: com a
+   * regra invertida TODO bloco tem padding de caixa, e o valor sai da escala de espaço —
+   * `--s-5` (16) no corpo do painel, `--s-4`/`--s-3` no cabeçalho dele. Um token só pra isso
+   * seria um sexto nome pro mesmo 16px, e a escala já responde. O que a regra FIXA é o par
+   * borda+raio+elevação (ver a nota no topo), não o respiro. */
+
+  /* ---- Movimento ----
+   * Três durações e duas curvas — o suficiente pra tudo, e pouco o bastante pra ninguém
+   * inventar um `.23s` no meio de um módulo. A barreira de movimento reprova duração literal
+   * em `transition`/`animation` de qualquer `*.module.css`.
+   *
+   * A `--mola` (ease-out forte) é o que faz um elemento parecer que CHEGOU em vez de
+   * simplesmente ter terminado de mover. É ela que dá a sensação de app novo; a `--suave`
+   * serve pro que não deve chamar atenção (cor, opacidade).
+   *
+   * Antes disto o produto tinha 17 durações escritas à mão — todas `background-color` de
+   * hover — e nenhuma animação. Movimento aqui vira sistema, não improviso por arquivo. */
+  --t-rapido: .14s;  /* hover e foco: tem que parecer instantâneo */
+  --t-medio:  .28s;  /* troca de estado, entrada de item */
+  --t-lento:  .85s;  /* revelação de dado: barra crescendo, número contando */
+  /* O quarto NÃO é "mais lento que o lento" — é outro PAPEL. Os três acima são transições:
+   * acontecem uma vez, em resposta a uma ação, e terminam. Este é o único ciclo AMBIENTE do
+   * kit (`animation: ... infinite`), que fica pulsando sozinho enquanto a condição durar — hoje
+   * o ponto de "saiu versão nova" na barra lateral. Usar `--t-lento` aqui daria ~1,2 pulso por
+   * segundo: isso não é chamar atenção, é estroboscópio na periferia da visão de quem está
+   * trabalhando. Quem usar este token é obrigado a honrar `prefers-reduced-motion`. */
+  --t-pulso:  2.4s;  /* respiração de um indicador persistente */
+  --mola:  cubic-bezier(.16, 1, .3, 1);
+  --suave: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ═══════════════════ O CONJUNTO CLARO — a alternativa ═══════════════════
+ * SÓ cor e elevação. Se um token seu não muda de valor entre os temas, ele NÃO entra aqui:
+ * duas cópias do mesmo número divergem no primeiro ajuste que alguém esquecer de repetir.
+ *
+ * Especificidade 0,2,0 contra os 0,1,0 do `:root` — o bloco claro ganha por construção, sem
+ * `!important` e sem depender da ordem do arquivo. Isso importa porque a cor de marca do
+ * comprador é injetada em runtime e precisa CASAR essa especificidade pra sobrescrever o
+ * acento; um bloco claro com peso maior faria a marca sumir só no claro.
+ *
+ * A luz vai pro lado oposto do escuro, e isso não é simetria automática: aqui o hover
+ * ESCURECE, os `-wash` são mais fracos (10% contra 14% — sobre branco a mesma alfa vira um
+ * bloco chapado), a sombra é sutil e o `--realce` não tem trabalho nenhum. */
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  /* As três camadas se INVERTEM de papel: aqui o painel é o branco puro e o chão é o cinza.
+   * É a inversão que faz conteúdo parecer conteúdo e moldura parecer moldura.
+   *
+   * 🔴 E a ordem também inverte: aqui a "alta" é mais ESCURA que a superfície, porque em cima
+   * do branco puro não existe pra onde clarear. Consequência medida: `--superficie-alta` fica
+   * a 1,03 do `--fundo` — praticamente indistinguível. No claro, portanto, elevação NÃO pode
+   * ser dita por cor de superfície; quem eleva alguma coisa aqui usa `--elev-1`/`--elev-2` e
+   * `--linha-forte`. No escuro a mesma dupla vale 1,12 e a cor ainda ajuda. */
+  --fundo:            #F7F7F9;  /* a PÁGINA */
+  --superficie:       #FFFFFF;  /* painel, cartão, drawer — 1,07 vs --fundo */
+  --superficie-alta:  #FAFAFB;  /* o que se levanta dentro do painel — 1,03 vs --fundo */
+  --superficie-hover: #F4F4F7;  /* hover de linha de lista */
+
+  --trilho:       #F2F2F6;
+  --trilho-hover: #E8E8EE;
+
+  /* Alfa de tinta escura, não hex: mesmo motivo do escuro — o filete tem que funcionar sobre
+   * as três camadas. Os números são contra --superficie. */
+  --linha:       rgba(11, 11, 20, .09);  /* 1,21 */
+  --linha-forte: rgba(11, 11, 20, .15);  /* 1,40 */
+  /* No claro o volume vem de sombra e borda; um filete de luz sobre branco é invisível.
+   * `transparent` e não branco: assim quem usar o token não paga uma pintura inútil. */
+  --realce: transparent;
+
+  /* Contra as CINCO: --fundo · --superficie · --superficie-alta · --trilho · --trilho-hover.
+   * O `--tinta-3` era #6E6E80 e caía a 4,09 sobre o `--trilho-hover` — o mesmo defeito do
+   * lado escuro, no mesmo lugar. Ver a nota da rampa de tinta no bloco de cima. */
+  --tinta:   #0B0B12;  /* 18,33 · 19,61 · 18,80 · 17,56 · 16,07 */
+  --tinta-2: #5A5A68;  /*  6,34 ·  6,78 ·  6,50 ·  6,07 ·  5,56 */
+  --tinta-3: #636374;  /*  5,50 ·  5,89 ·  5,64 ·  5,27 ·  4,82 */
+
+  /* Aqui ela é branca, que é o caso fácil: sobre fundo claro um acento com 4,5:1 contra
+   * branco serve como texto E como chão de texto branco, porque contraste é simétrico. É
+   * exatamente essa simetria que o escuro não tem — ver a nota do bloco de cima. */
+  --tinta-invertida: #FFFFFF;  /* 5,68 acento · 6,37 hover · 8,02 ativo · 5,05 erro · 5,38 ok · 5,28 aviso */
+
+  --icone-mudo: #77778A;  /* 4,10 · 4,38 · 4,20 · 3,93 · 3,59 — piso 3, é gráfico */
+
+  /* A rampa ESCURECE a cada estado, ao contrário do escuro.
+   *
+   * 🔴 O `--acento` era `#6D4AFF` e REPROVAVA sobre o PRÓPRIO wash: 4,38 no pior chão, contra
+   * um piso de 4,5. É a mesma mecânica que já mordeu a `Pill` de erro — o wash é `rgba()` e
+   * compõe sobre o que estiver atrás, que nem sempre é a superfície opaca —, só que aqui ela
+   * tinha ficado registrada como dívida em vez de consertada. Um chip de acento tem rótulo de
+   * acento em cima, então o par é obrigatório.
+   *
+   * Escurecer dois níveis por canal fecha os quatro pares de uma vez (o par sobe pra 4,80) e é
+   * a MENOR mudança que fecha — candidatos mais escuros também passam, mas afastam mais do tom
+   * aprovado. Quem mexer aqui move os canais literais do `-wash` e do `-linha` junto: eles são
+   * `rgba()` e não derivam sozinhos (há barreira que obriga, e ela está certa). */
+  --acento:       #6743F5;  /* 5,31 · 5,68 · 5,44 */
+  --acento-hover: #5B3EE8;  /* 5,95 · 6,37 · 6,10 */
+  --acento-ativo: #4A2FD1;  /* 7,50 · 8,02 · 7,69 */
+
+  /* ⚠️ 7% e 28%, um ponto abaixo dos 8% do escuro e não os mesmos: sobre branco a mesma alfa
+   * produz um bloco mais chapado, que compete com o texto em cima dele.
+   *
+   * 🔴 Aqui o par crítico REPROVAVA de verdade: a 10% o `--erro` sobre o próprio wash dava
+   * 4,33 e o `--acento` dava 4,48. Este é o lado apertado dos dois temas — os quatro pares
+   * abaixo ficam entre 4,54 e 4,80 NO PIOR CHÃO, contra 4,61–8,57 no escuro. Quem clarear
+   * qualquer uma destas cores, ou engrossar qualquer um destes washes, mede o par de novo. */
+  --acento-wash:  rgba(103, 67, 245, .07);  /* --acento sobre ele: 4,80 no PIOR chão */
+  --acento-linha: rgba(103, 67, 245, .28);
+
+  /* 🔴 O par cor × PRÓPRIO wash é medido no PIOR CHÃO, e o wash é TRANSPARENTE — então o chão
+   * entra na conta. Estes números eram os da composição sobre `--superficie` (branco), e a
+   * `Pill` de erro do painel e do detalhe de empresa mora em cartão TRANSPARENTE: lá o wash
+   * compõe sobre `--fundo`, que é mais escuro, e a mesma pílula caía de 4,54 pra **4,26**. A
+   * mesma pílula no kanban (cartão com superfície de verdade) passava — o defeito não era da
+   * cor, era do chão não estar na medição.
+   *
+   * `--erro` escureceu de `#D12F2F` pra `#C92D2D` (dois níveis por canal) e o par volta a 4,54
+   * NO PIOR CHÃO. Escurecer a TINTA e não opacificar o wash: o wash sai por `color-mix` do par,
+   * então ele acompanha a mudança sozinho e continua sem segunda fonte da verdade — um wash
+   * opaco resolveria o número e criaria de novo o desalinhamento que "mexeu na cor, meça o wash"
+   * existe pra impedir. Escurecer também melhora TODOS os outros pares do token (contra as três
+   * superfícies e sob `--tinta-invertida`), o que opacificar não faz.
+   *
+   * Os três números ao lado da cor são contra --fundo · --superficie · --superficie-alta; o
+   * número ao lado do wash é o par sobre o PIOR dos três. */
+  --ok:    #007A52;  /* 5,03 · 5,38 · 5,15 */
+  --erro:  #C92D2D;  /* 5,04 · 5,39 · 5,16 */
+  /* ⚠️ `#9B5C00` e não `#9C5D00`: um nível por canal, e ele não é cosmético. Sobre o pior chão o
+   * par dava 4,4991 — reprovava por nove DÉCIMOS DE MILÉSIMO, invisível em qualquer tabela
+   * arredondada a duas casas (onde ele lia "4,50 ✅"). Foi o mesmo defeito do `--erro`, só que na
+   * casa que ninguém imprime. Ele não tem token acoplado: o wash sai por `color-mix`, então
+   * acompanha sozinho. */
+  --aviso: #9B5C00;  /* 5,00 · 5,35 · 5,12 */
+  --ok-wash:    color-mix(in srgb, var(--ok) 7%, transparent);     /* --ok sobre ele: 4,56 */
+  --erro-wash:  color-mix(in srgb, var(--erro) 7%, transparent);   /* --erro sobre ele: 4,54 */
+  --aviso-wash: color-mix(in srgb, var(--aviso) 7%, transparent);  /* --aviso sobre ele: 4,56 */
+
+  /* A `--tinta` do tema a 32%, e não um preto: mesma razão da sombra logo abaixo. É o valor que
+   * a gaveta lateral já praticava e que foi MEDIDO funcionando (delta 2,07 na auditoria); o que
+   * muda aqui é ele deixar de ser um literal repetido em dois módulos com alfas divergentes. */
+  --veu: rgba(11, 11, 20, .32);
+
+  /* Sombra de tinta, não de preto: preto sobre branco lê como sujeira cinza. E muito mais
+   * fraca que a do escuro — no claro a separação já vem da borda. */
+  --elev-1: 0 1px 2px rgba(11, 11, 20, .06);
+  --elev-2: 0 1px 3px rgba(11, 11, 20, .07), 0 12px 32px rgba(11, 11, 20, .09);
+}
+
+/* Movimento é preferência do sistema, não escolha nossa. Quem liga "reduzir movimento" no
+ * SO costuma fazer isso por enxaqueca, vertigem ou distúrbio vestibular — animação ali não
+ * é enfeite ignorado, é sintoma.
+ *
+ * Zera GLOBALMENTE em vez de caso a caso: uma regra que depende de cada autor lembrar é
+ * uma regra que falha na primeira tela nova. A barreira de movimento exige que
+ * este bloco exista — sem o teste ele some num refactor e ninguém percebe, porque não há
+ * sintoma nenhum pra quem não usa a preferência.
+ *
+ * 🔴 Não é `none`, e a diferença não é sutil:
+ *   1. `.01ms` deixa `transitionend`/`animationend` ainda dispararem, então lógica que
+ *      espera por esses eventos não trava esperando um evento que nunca vem;
+ *   2. `animation: none` em `.entra` (que nasce com `opacity: 0` e só chega a 1 pelo
+ *      keyframe) deixaria o conteúdo PERMANENTEMENTE INVISÍVEL — a preferência de
+ *      acessibilidade apagaria a tela.
+ *
+ * ⚠️ Isto alcança só o CSS — `!important` no seletor universal não enxerga um laço de JS.
+ * Quem escrever animação em `requestAnimationFrame` (contador de número subindo, por
+ * exemplo) tem que checar `matchMedia('(prefers-reduced-motion: reduce)')` por conta e
+ * pintar o valor final de uma vez. Hoje o produto não tem nenhuma: existiu um helper pra
+ * isso e ele foi apagado por nunca ter ganhado um chamador — ou seja, esta regra é a única
+ * coisa que sobrou avisando, e ela avisa ANTES de a primeira ser escrita. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    /* 🔴 Os dois ATRASOS também, e isto não está no snippet canônico que circula por aí —
+     * ele é anterior a escalonamento por índice. MEDIDO no browser em 2026-08-05: com só as
+     * três linhas acima, um item de `.escalona` com `--i: 30` continuava esperando 360ms
+     * parado num espaço em branco antes de aparecer. Ou seja, a preferência tirava a
+     * animação e deixava a ESPERA — o pior dos dois mundos, e o oposto de "tudo aparece
+     * pronto". Atraso só existe como coreografia, e coreografia é exatamente o que quem
+     * liga esta preferência está pedindo pra não ver. */
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Reset básico ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  /* `--fundo`, não `--superficie`: aqui é o CHÃO. O `.shell` já cobre a viewport, mas o
+   * `body` aparece no overscroll — e ali a cor errada vaza. */
+  background: var(--fundo);
+  color: var(--tinta-2);
+  /* 13/1.45 = `--fs-body`. Era 14/1.5, um tamanho que NÃO existe na escala de cinco — e
+   * como é o herdado, todo texto sem font-size próprio contava como um estilo a mais na
+   * medição de "≤ 8 estilos por tela". */
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Herança da fonte em controles de formulário (senão viram sans-serif do UA). */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* `<b>` e `<strong>` sem classe herdam `bold` = 700 da folha do NAVEGADOR — um peso que a
+ * escala do kit não tem (são 400/500/600; 700 só no lockup de marca).
+ *
+ * 🔴 Nenhuma barreira de CSS pega isto, porque não há declaração nenhuma pra ler: o peso
+ * não está no nosso código. Foi achado no contador de estilos-por-tela — um `13/700` cinza
+ * no /relatorios ("Ver resultado") e no /config ("Dono", "membro"). É a mesma classe de
+ * vazamento do `style={{}}` inline: invisível pra quem lê só os `.module.css`. Enquanto a
+ * medição no browser for manual, a defesa é esta regra global. */
+b,
+strong {
+  font-weight: 600;
+}
+
+a {
+  color: var(--acento);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--acento-hover);
+}
+
+/* ── Controles nativos: <select> e campos de data ──────────────────────────────
+ * REGRA ÚNICA E GLOBAL (não repetir por tela). Sem isto o navegador desenha o
+ * chevron/calendário nativos, com altura e raio fora do kit, ao lado dos nossos
+ * botões e inputs estilizados. Os elementos seguem NATIVOS (a11y e teclado
+ * intactos); só a pele muda.
+ *
+ * ⚠️ O que faz o MIOLO destes controles seguir o tema é o `color-scheme` lá em cima, não
+ * este bloco: a lista aberta do `<select>`, o calendário do `input[type=date]` e o realce
+ * do autofill são desenhados pelo navegador, fora do alcance de qualquer seletor nosso.
+ *
+ * Duas camadas, de propósito:
+ *   1. `:where(...)` (especificidade 0) = defaults do kit — qualquer classe de
+ *      módulo sobrescreve livremente (padding compacto, cor, etc.).
+ *   2. `select[class]` / `input[type='…']` (especificidade 0,1,1) = o que NÃO
+ *      pode ser perdido: `appearance:none`, o chevron e a reserva de espaço pra
+ *      ele. Precisa ganhar da classe do módulo porque `background: <cor>` é
+ *      shorthand e apagaria o `background-image` do chevron. */
+
+:where(select, input[type='date'], input[type='datetime-local'], input[type='time'], input[type='month']) {
+  /* `--superficie` e não `--trilho`: campo EDITÁVEL é um plano, não um poço. Poço lê como
+   * desabilitado nos dois temas. A contenção vem da borda. */
+  background-color: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  outline: none;
+}
+
+select[class],
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  /* Chevron do kit (lucide chevron-down). O traço é um hex escrito à mão: é um data-URI,
+   * então `var()` não resolve aqui — e um data-URI não pode ser dois valores, então ele não
+   * segue o tema.
+   *
+   * ⚠️ Um literal serve os dois porque os dois valores de `--icone-mudo` estão a 3/255 um do
+   * outro (#7A7A88 no escuro, #77778A no claro). Medido com o valor abaixo: 4,73 · 4,48 ·
+   * 4,21 nas superfícies escuras e 3,95 · 4,23 · 4,05 nas claras — passa com folga no piso
+   * de 3 dos dois lados. Se os dois valores do token divergirem de verdade, este atalho
+   * morre e o chevron precisa virar máscara (`mask-image` + `background-color`), que é a
+   * única forma de um ícone embutido seguir token. Não há barreira ligando os dois. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237A7A88' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-inline-end: 32px;
+}
+
+/* Listbox (`multiple`) não é dropdown: sem chevron nem reserva. */
+select[multiple] {
+  background-image: none;
+  padding-inline-end: 12px;
+  cursor: auto;
+}
+
+/* Campos de data: some com o visual nativo mas mantém o picker acessível. */
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'],
+input[type='month'] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator,
+input[type='month']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  padding: 0;
+  margin-inline-start: var(--s-3);
+}
+
+input[type='date']::-webkit-calendar-picker-indicator:hover,
+input[type='datetime-local']::-webkit-calendar-picker-indicator:hover,
+input[type='time']::-webkit-calendar-picker-indicator:hover,
+input[type='month']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Foco único pra todos eles (ganha da classe do módulo: 0,1,1).
+ *
+ * É o MESMO anel do resto do produto (um só, global, em tudo): 2px de `--acento`
+ * com 2px de offset. Era `border-color` azul + `box-shadow: 0 0 0 4px` — dois problemas:
+ * o halo é sombra fingindo anel (a elevação é reservada pro que flutua de verdade) e,
+ * por vir com especificidade 0,1,1, ele pintava POR CIMA do anel dos módulos, deixando
+ * `<select>` e campos de data com um foco diferente do de todo input ao lado. */
+select:focus-visible,
+input[type='date']:focus-visible,
+input[type='datetime-local']:focus-visible,
+input[type='time']:focus-visible,
+input[type='month']:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

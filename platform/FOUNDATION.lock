@@ -1,0 +1,21 @@
+{
+  "motorRef": "f9a18fdf317f9fcdb9badca487870d8b0ea065d5",
+  "files": {
+    "platform/lib/license-state.ts": {
+      "motorPath": "src/lib/license-state.ts",
+      "sha256": "9833568731974f94afd5a559197ba0093add96f2ae4db489adcd61e79968f729"
+    },
+    "platform/server/hub/verify-signature.ts": {
+      "motorPath": "src/server/hub/verify-signature.ts",
+      "sha256": "f601d6d5df68f27ea8402380ec3ef70c9146202d3b85c159b62ca0ed8074d83a"
+    },
+    "platform/server/custom/verificarAssinatura.ts": {
+      "motorPath": "src/server/custom/verificarAssinatura.ts",
+      "sha256": "5b9a0f05e4ec26542454805d6d790493e1ab6927c2779486145944eac11e971f"
+    },
+    "migrate.mjs": {
+      "motorPath": "migrate.mjs",
+      "sha256": "497b8048bb81d743b82821112036ebbd7aece4e52650814094bc78c692eeffa9"
+    }
+  }
+}

@@ -1,0 +1,130 @@
+/* movimento.module.css — as primitivas de movimento do kit v2.
+ *
+ * Existe pra que "conteúdo entrando na tela" seja UMA regra no produto inteiro, e não uma
+ * `@keyframes` reescrita em cada módulo com uma duração levemente diferente. Antes da
+ * kit v2 o app não tinha animação nenhuma: as 17 `transition` eram todas cor de hover, e
+ * era isso que o dono estava vendo quando disse "parece um CRM de 2010".
+ *
+ * Como usar: importe daqui e componha com a classe do próprio módulo —
+ *
+ *     import mov from '@/app/movimento.module.css'
+ *     <li className={`${s.linha} ${mov.entra} ${mov.escalona}`} style={{ '--i': i }} />
+ *
+ * As durações e as curvas vêm dos tokens `--t-*` / `--mola` / `--suave` do `globals.css`;
+ * a barreira de movimento reprova qualquer literal aqui dentro.
+ *
+ * 🔴 `prefers-reduced-motion` NÃO é tratado neste arquivo. O bloco global do `globals.css`
+ * cobre tudo com `!important`, inclusive estas classes. Não repita a regra aqui: duas
+ * fontes pra mesma garantia divergem, e a que fica errada é sempre a local. */
+
+/* ── Entrada: o conteúdo CHEGA em vez de simplesmente estar lá ────────────────────────
+ *
+ * Nove pixels de subida, não vinte: o suficiente pro olho registrar direção sem que a
+ * página pareça balançar quando oito blocos entram juntos. O deslocamento é `transform`
+ * (composto na GPU, não gera reflow); animar `top`/`margin` faria o layout recalcular a
+ * cada quadro, com 8 elementos de uma vez.
+ *
+ * `opacity: 0` vive no elemento e não no `from` do keyframe: assim o estado inicial vale
+ * já no primeiro pintado, antes de a animação começar, e não há um quadro de flash com o
+ * conteúdo cheio no lugar errado.
+ *
+ * 🔴 `forwards` é obrigatório — sem ele o elemento volta pro `opacity: 0` do próprio
+ * seletor quando a animação acaba, e o conteúdo some. Pelo mesmo motivo o bloco global de
+ * `reduced-motion` usa `.01ms` e não `animation: none`: com `none`, este `opacity: 0` fica
+ * de pé pra sempre. */
+.entra {
+  opacity: 0;
+  transform: translateY(9px);
+  animation: entra var(--t-medio) var(--mola) forwards;
+}
+
+@keyframes entra {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Escalonamento: a ORDEM da lista vira tempo ───────────────────────────────────────
+ *
+ * Compõe com `.entra` (sozinha ela não anima nada — só atrasa). O índice vem do React numa
+ * custom property, porque CSS não sabe contar irmãos em `calc()`:
+ *
+ *     style={{ '--i': i } as CSSProperties}
+ *
+ * (o cast existe porque `CSSProperties` do React não declara custom properties; é o
+ * caminho oficial e não vale criar um wrapper pra ele.)
+ *
+ * 🔴 O `min()` é o ponto todo desta classe. Sem teto, uma lista de 40 negócios faria o
+ * último cartão esperar quase dois segundos — o escalonamento deixa de ser ritmo e vira
+ * carregamento lento. Com 45ms de passo e teto de 360ms, os oito primeiros itens contam a
+ * ordem e o resto entra junto: quem lê de cima pra baixo percebe a cascata, quem só quer o
+ * dado não espera por ela.
+ *
+ * `var(--i, 0)` com fallback é deliberado: item sem índice entra imediatamente, em vez de
+ * o `calc()` inteiro virar inválido e o atraso virar indefinido. */
+.escalona {
+  animation-delay: min(calc(var(--i, 0) * 45ms), 360ms);
+}
+
+/* ── Barra crescendo: o comprimento se DESENHA, como a curva da sparkline ─────────────
+ *
+ * Usada pelos DOIS funis do produto — o do painel (`GraficoEtapas`) e o de `/relatorios`
+ * (`GraficoFunil`) —, que mostram o mesmo objeto e por isso têm que se mover igual.
+ *
+ * 🔴 A classe e o `@keyframes` vivem no MESMO arquivo por obrigação técnica, não por
+ * organização: nome de keyframe em CSS Module é escopado por arquivo e sai hasheado, então
+ * um `animation: cresce` escrito em `painel.module.css` NUNCA enxergaria um `@keyframes
+ * cresce` daqui. Era por isso que a regra estava duplicada byte a byte nos dois módulos —
+ * a duplicata não era desleixo, era a única forma de reusar sem esta classe existir.
+ *
+ * Compõe com a classe da barra do próprio módulo, que é quem dá cor, altura e raio:
+ *
+ *     <span className={`${s.barraEtapa} ${mov.cresce}`} style={{ width: `${largura}%` }} />
+ *
+ * A largura final vem do `style` inline (é dado, muda por linha); o keyframe só diz de onde
+ * ela parte. Animar `width` gera reflow, e aqui isso é aceito de propósito: são cinco barras
+ * numa lista curta, e a alternativa (`transform: scaleX`) esticaria junto o raio das pontas,
+ * deixando a ponta da barra menor achatada e a da maior esticada.
+ *
+ * 🔴 `backwards` não é detalhe: as barras compõem com `.escalona`, e durante o atraso um
+ * elemento sem `fill-mode` fica no estado BASE — ou seja, a barra apareceria com a largura
+ * cheia, esperaria a vez e só então saltaria pra zero pra crescer. Um flash por barra. */
+.cresce {
+  animation: cresce var(--t-lento) var(--mola) backwards;
+}
+
+@keyframes cresce {
+  from {
+    width: 0;
+  }
+}
+
+/* ── Esqueleto: a varredura de carregamento ───────────────────────────────────────────
+ *
+ * Substitui a tela em branco enquanto o dado não chegou. O gradiente tem TRÊS paradas
+ * (base → clara → base) e a caixa é 4× mais larga que o elemento, então deslizar o
+ * `background-position` faz um brilho atravessar o bloco em vez de a cor inteira piscar —
+ * pisca é o que o olho lê como erro.
+ *
+ * Anima `background-position`, não `left`/`width`: não há reflow, e o efeito funciona em
+ * qualquer forma (linha de texto, avatar redondo, cartão) sem elemento extra por dentro.
+ *
+ * `--t-lento` é o ritmo da varredura de propósito, e não um valor próprio: o esqueleto
+ * pertence à mesma família do "dado se revelando" (barra crescendo, número contando). Se
+ * ele piscasse mais rápido que isso, competiria com o conteúdo que está chegando. */
+.pulsa {
+  background: linear-gradient(90deg, var(--trilho) 25%, var(--superficie-hover) 37%, var(--trilho) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--r-pequeno);
+  animation: pulsa var(--t-lento) var(--suave) infinite;
+}
+
+@keyframes pulsa {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}

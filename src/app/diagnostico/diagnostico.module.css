@@ -1,0 +1,202 @@
+/* diagnostico.module.css — a tela pública de config pendente (deploy leigo). Kit v2.
+ *
+ * 🔴 A MOLDURA NÃO MORA MAIS AQUI. `.tela`, `.cardLargo`, `.marca`, `.tile`, `.titulo` e
+ * `.sub` vêm do `(auth)/auth.module.css` — a mesma receita de `/entrar`, `/cadastrar`,
+ * `/convite` e `/sem-workspace`, com a moldura `--trilho` explicada lá. Eram uma cópia byte a
+ * byte, e a cópia já tinha começado a divergir. O que sobrou neste arquivo é só o que é DESTA
+ * tela: a lista de conferência.
+ *
+ * 🔴 DENTRO do cartão os três campos são LINHAS, não caixas — e isso não mudou quando a regra
+ * de contenção foi invertida. A regra dá caixa a BLOCO DE CONTEÚDO, e o bloco aqui é o cartão
+ * inteiro; os três campos são itens de uma checklist dentro dele. Eram três caixas cinzas
+ * (`--trilho` + borda + raio) empilhadas dentro do cartão — caixa dentro de caixa, e no pior
+ * lugar possível: checklist se lê de cima a baixo, não como três blocos independentes. Hoje
+ * são linhas na superfície, separadas por filete, sob um rótulo de seção.
+ *
+ * O que continua tendo superfície própria é só o ALERTA (`.recuperacao`, `.problema`,
+ * `.orfao`, `.aviso`): wash + barra saturada de 2px. Alerta não é bloco de conteúdo — ele
+ * precisa interromper a varredura, e é o único jeito honesto de dizer "isto aqui está
+ * quebrado" numa tela em que tudo o mais é texto preto sobre branco. */
+
+/* ---- A lista de conferência ---- */
+
+.bloco {
+  margin-top: var(--s-6);
+}
+
+/* Rótulo de seção micro em caixa alta + filete: a receita de `.blocoCab` do `_crm`,
+ * que é como toda seção do produto começa desde 2026-08-05. */
+.blocoCab {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+.lista {
+  list-style: none;
+  padding: 0;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  column-gap: var(--s-4);
+  align-items: start;
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--linha);
+}
+
+.item:last-child { border-bottom: 0; }
+
+/* O disco de estado. `--ok`/`--erro` sobre o wash de cada um (5,98 e 5,94 contra branco;
+ * 5,29 e 5,18 sobre o próprio wash) — o glifo é lucide, não o caractere "✓"/"✕" que estava
+ * aqui: o produto inteiro desenha ícone, e um dingbat de fonte muda de forma e de altura em
+ * cada sistema operacional, que é exatamente o que não se quer numa tela cuja única função é
+ * dizer "isto passou" e "isto não". */
+.marcaOk,
+.marcaErro {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  /* alinha o disco com a PRIMEIRA linha do rótulo ao lado, não com o centro do bloco */
+  margin-top: var(--s-1);
+}
+
+.marcaOk {
+  background: var(--ok-wash);
+  color: var(--ok);
+}
+
+.marcaErro {
+  background: var(--erro-wash);
+  color: var(--erro);
+}
+
+.corpo {
+  min-width: 0;
+}
+
+/* 13/500 `--tinta`, não 600: a escala reserva o 600 pro rótulo micro em caixa alta. */
+.rotulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+/* O nome da variável vira CHIP, e isso é funcional antes de ser estético: é o texto que o
+ * comprador vai copiar pro campo "Name" do EasyPanel. Monospace solto em `--tinta-3` lia como
+ * legenda; num chip `--trilho` ele lê como valor literal, e o `word-break` garante que
+ * `SUPABASE_SERVICE_ROLE_KEY` não estoure a largura no celular. */
+.varNome {
+  display: inline-block;
+  margin-top: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-pequeno);
+  background: var(--trilho);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  word-break: break-all;
+}
+
+/* ---- Alertas: wash + barra de 2px ----
+ *
+ * Uma família só, três papéis. O wash sozinho sobre branco é uma mancha clara sem começo nem
+ * fim (`--erro-wash` dá 1,05:1 contra a página, o mesmo valor de borda que o dono não
+ * enxergava no v1); quem marca o bloco é a barra saturada na borda. Mesma gramática da
+ * `ProximaAtividade` do negócio e das mensagens de `(auth)`. */
+
+.problema,
+.orfao,
+.aviso,
+.recuperacao {
+  border-radius: var(--r-controle);
+  padding: var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.problema,
+.orfao {
+  border-left: 2px solid var(--erro);
+  background: var(--erro-wash);
+}
+
+.aviso,
+.recuperacao {
+  border-left: 2px solid var(--aviso);
+  background: var(--aviso-wash);
+}
+
+/* O detalhe de um campo reprovado nasce DENTRO da linha dele. Antes era um `border-top`
+ * cinza no meio da caixa cinza — o "como resolver" tinha o mesmo peso do nome da variável
+ * que passou. */
+.problema {
+  margin-top: var(--s-3);
+}
+
+.problema + .problema,
+.orfao + .orfao,
+.aviso + .aviso {
+  margin-top: var(--s-3);
+}
+
+.recuperacao {
+  margin-top: var(--s-5);
+  color: var(--aviso);
+  font-weight: 500;
+}
+
+/* Dentro de um alerta, o título é 13/500 no tom SEMÂNTICO e a instrução é `--tinta-2` sobre o
+ * wash (8,x:1). Não `--tinta-3`: quem lê isto é quem está travado, e a instrução é a única
+ * coisa da tela que resolve o problema. */
+.problemaTitulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.orfao .problemaTitulo { color: var(--erro); }
+.problema .problemaTitulo { color: var(--erro); }
+.aviso .problemaTitulo { color: var(--aviso); }
+
+.comoResolver {
+  margin-top: var(--s-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+/* O nome da variável dentro de um bloco de órfão/aviso: chip sobre wash, sem o `--trilho`
+ * (que sobre o wash colorido lê como buraco). */
+.varNomeAlerta {
+  display: inline-block;
+  margin-bottom: var(--s-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  word-break: break-all;
+}
+
+.rodape {
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}

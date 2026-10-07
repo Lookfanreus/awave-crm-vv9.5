@@ -1,0 +1,63 @@
+/* Avatar.module.css — disco com iniciais sobre o degradê derivado do nome (kit v2).
+ *
+ * A COR não está aqui: ela é calculada em `src/lib/avatar.ts` e chega por `style`, porque
+ * depende do nome e nenhum token pode representar 360 matizes. O que está aqui é a forma —
+ * tamanho, raio, tipografia e o anel. */
+
+.avatar {
+  /* 28px é o tamanho de linha de lista; 24 (`.sm`) é o de dentro do rail e de rodapé de
+   * cartão. Dois tamanhos e não uma escala: a terceira medida sempre nasce de um caso e
+   * fica pra sempre. */
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+
+  /* 🔴 `--tinta-sobre-derivado` (branca nos dois temas), NUNCA `--tinta-invertida`.
+   *
+   * O erro que esta linha impede de voltar: `--tinta-invertida` quer dizer "a tinta de quando
+   * o chão é cor cheia DO TEMA" — botão primário, botão destrutivo — e no escuro ela é
+   * ESCURA. O chão daqui não é do tema: é o degradê derivado do nome em `src/lib/avatar.ts`,
+   * cujo `L` é escolhido, matiz a matiz, como o maior que ainda dá 4,5:1 CONTRA BRANCO
+   * (`TETO_L`). Trocar a tinta por tema quebra a única garantia que aquele degradê tem.
+   * Medido no escuro com a tinta por tema: 2,42–3,91 no meio do degradê e 1,87 contra a
+   * parada mais escura — as iniciais sumiam, em toda tela do produto.
+   *
+   * ⚠️ E o conserto NÃO era re-derivar o degradê por tema. A cor do avatar identifica a
+   * pessoa; derivá-la duas vezes daria duas cores para a mesma pessoa, conforme o tema de
+   * quem olha. A tinta é que estava errada. */
+  color: var(--tinta-sobre-derivado);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-micro);
+  line-height: var(--lh-micro);
+
+  /* Anel interno de luz — o que dá volume ao disco em vez de deixá-lo chapado.
+   *
+   * É `border` e não o `box-shadow: inset` do protótipo: a barreira de sombra do kit
+   * reserva `box-shadow` pro que FLUTUA de verdade, e um avatar não flutua. O efeito é o
+   * mesmo — o fundo se estende sob a borda (`background-clip: border-box`), então o branco
+   * a 18% pousa sobre o próprio degradê e clareia a beirada.
+   *
+   * Translúcido, e não um token: ele tem que funcionar sobre 360 fundos diferentes, todos
+   * derivados do nome — nenhum deles é uma superfície do tema, então nenhum token os alcança.
+   *
+   * ⚠️ Esta nota já citava o véu branco do hover do rail como "o mesmo motivo". Não era, e o
+   * véu de lá morreu por causa disso: aquele chão ERA um token (`--superficie`), então o véu
+   * podia ser um token e o literal só escondia que ele sumia no tema claro. Aqui o chão não é
+   * do tema, e é isso — e só isso — que justifica o literal.
+   *
+   * tema:ok funcao — o chão aqui é degradê derivado do nome, nenhum token do tema o alcança. */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  /* O texto é curto e conhecido (1–2 letras), mas o disco é redondo: sem isto, um nome que
+   * escapasse da normalização vazaria por fora da circunferência. */
+  overflow: hidden;
+}
+
+.sm {
+  width: 24px;
+  height: 24px;
+}

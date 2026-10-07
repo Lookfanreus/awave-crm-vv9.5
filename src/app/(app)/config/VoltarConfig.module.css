@@ -1,0 +1,31 @@
+/* VoltarConfig.module.css — o link "voltar" das sub-telas de /config. Kit v2. */
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  /* `fit-content`: dentro de um `.pagina` que é flex-column, um <a> em bloco esticaria pela
+   * largura toda e a área clicável cobriria a linha inteira, longe do texto. */
+  width: fit-content;
+  /* Encurta o gap da `.pagina` pra METADE, pra o link ficar preso ao cabeçalho da tela em vez
+   * de boiar entre ele e o conteúdo — mas sem colar: a `--s-5` (16) do gap menos `--s-3` (8)
+   * deixa exatamente os 8px que o v1 produzia em /config/campos.
+   * 🔴 O valor depende do gap da `.pagina`, que a A9 unificou em `--s-5` nas três telas
+   * irmãs de /config. Antes eram 20, 20 e 12, e o `-12` de então só acertava numa delas.
+   * Mexeu num gap, confira aqui — não há teste que pegue isto. */
+  margin-block-end: calc(-1 * var(--s-3));
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-3);
+  text-decoration: none;
+}
+
+.voltar:hover {
+  color: var(--acento);
+}
+
+.voltar:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

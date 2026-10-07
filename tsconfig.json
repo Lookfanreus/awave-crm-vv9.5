@@ -1,0 +1,76 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "types": [
+      "node",
+      "next"
+    ],
+    "outDir": "dist",
+    "rootDir": ".",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "jsx": "react-jsx",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@platform/*": [
+        "./platform/*"
+      ],
+      "@custom/*": [
+        "./custom/*"
+      ],
+      "@awave/custom": [
+        "./src/custom-sdk/index.ts"
+      ],
+      "@awave/custom/*": [
+        "./src/custom-sdk/*"
+      ]
+    },
+    "allowJs": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "src",
+    "tests",
+    "platform",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    // 🔴 A bancada de navegador instala o `@playwright/test` À PARTE, porque devDependency na raiz
+    // entraria no build de TODO comprador — o `Dockerfile` roda `pnpm install --frozen-lockfile`
+    // SEM `--prod`. A consequência aqui: numa árvore recém-clonada esses arquivos não resolvem o
+    // import, e o `tsc` — que É gate no CI — reprova com "Cannot find module '@playwright/test'"
+    // mais uma cascata de `implicitly has an 'any'`. MEDIDO tirando a instalação dela do lugar:
+    // de `tsc` limpo para 2 erros de módulo.
+    //
+    // 🔴 EXCLUÍDO POR PADRÃO, NUNCA POR CAMINHO DE PASTA INTERNA — este arquivo É ENTREGUE. Nomear
+    // a pasta aqui reprova o `pnpm audit:entrega` (aconteceu: 3 achados `caminho-nao-entregue`) e,
+    // pior que o gate, manda ao comprador um `tsconfig` que fala de pasta que ele não tem. Mesmo
+    // motivo pelo qual o `.gitignore` ignora `test-results/` e não a pasta da bancada.
+    //
+    // Os dois padrões abaixo são exatamente a superfície que importa o Playwright, e o primeiro já
+    // é convenção declarada do repositório: `*.e2e.ts` é do Playwright, `*.spec.ts` é do vitest.
+    // Os `.mjs` de apoio ficam de fora disto de graça — sem `checkJs`, o `tsc` não os confere.
+    "**/*.e2e.ts",
+    "**/playwright.config.ts"
+  ]
+}

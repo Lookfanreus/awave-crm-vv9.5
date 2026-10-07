@@ -1,0 +1,130 @@
+/* NavMobile.module.css — gaveta de navegação do layout empilhado (kit v2).
+ *
+ * No desktop o botão não existe e a gaveta é `display: contents`: o `<aside>` do Rail
+ * volta a ser o item do grid do shell e nada muda. Tudo que é gaveta vive no media
+ * query — inclusive o `.overlay`, de propósito: se um estado aberto vazasse pro desktop,
+ * o pior caso é uma div sem estilo (invisível), não um véu cobrindo a tela inteira.
+ *
+ * 🔴 Um dos QUATRO módulos que mantêm `box-shadow` (ver a barreira de sombra do kit):
+ * a gaveta aberta flutua de verdade sobre a página. */
+
+.botao {
+  display: none;
+}
+
+/* 🔴 A BARRA SÓ EXISTE ABAIXO DE 1024px. No desktop ela não é "vazia", ela não EXISTE — e
+ * é essa a diferença que a decisão D7 comprou: 52px de altura útil em 23 telas. Se um dia
+ * alguém quiser pôr algo aqui, o lugar certo quase sempre é o rail ou o cabeçalho da
+ * página; esta barra é infraestrutura da gaveta, não uma região de conteúdo. */
+.barraMobile {
+  display: none;
+}
+
+.gaveta {
+  display: contents;
+}
+
+@media (max-width: 1024px) {
+  /* 48px, não os 52 da top bar que morreu: sem o seletor de workspace e sem o menu do
+   * usuário, o que ela precisa acomodar é um alvo de toque e nada mais. */
+  .barraMobile {
+    display: flex;
+    align-items: center;
+    height: 48px;
+    flex-shrink: 0;
+    padding: 0 var(--s-5); /* acompanha o padding do conteúdo em mobile */
+    background: var(--superficie);
+    border-bottom: 1px solid var(--linha);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--linha-forte);
+    border-radius: var(--r-controle);
+    background: var(--superficie);
+    /* `--tinta-3` e não `--icone-mudo`: é um botão SÓ DE ÍCONE — não há rótulo ao lado, então
+     * o desenho carrega a informação sozinho, e `--icone-mudo` só vale pra ícone DECORATIVO,
+     * o que tem texto do lado. Ícone que informa sozinho usa tom de texto. */
+    color: var(--tinta-3);
+    cursor: pointer;
+  }
+
+  .botao:hover {
+    background: var(--superficie-hover);
+  }
+
+  /* O anel de FORA, o mesmo de todo controle avulso do produto — e a regra mora AQUI DENTRO
+   * de propósito: fora deste recorte o botão é `display: none` e não existe pra receber foco.
+   *
+   * Ele cabe por pouco e o número importa: o botão tem 38px, o anel alcança 4px de cada lado
+   * (2 de folga + 2 de traço) = 46px, dentro dos 48px da barra. Se alguém encolher a barra ou
+   * engordar o botão, é o anel que passa a encostar na borda — e aí o caso vira o do anel de
+   * dentro, não um anel mais fino.
+   *
+   * `:focus-visible` e não `:focus`: sem isso o anel acende em todo toque/clique, e um botão
+   * que fica permanentemente contornado depois de aberto o menu não diz mais nada. */
+  .botao:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  .gaveta {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 82vw);
+    z-index: 60; /* acima da barra mobile sticky (z-index 10) e do overlay */
+    transform: translateX(-100%);
+    /* `visibility` tira os links do tab order com a gaveta fechada — sem isso o teclado
+     * navegaria por um menu invisível. Some só DEPOIS da transição de saída. */
+    visibility: hidden;
+    /* O `0s` da `visibility` é duração ZERO com atraso de `--t-medio`: ela vira `hidden` de
+     * uma vez, mas só depois que o painel terminou de sair. O atraso tem que ser o MESMO
+     * token do slide — se os dois divergirem, ou a gaveta some antes de sair da tela, ou
+     * fica um menu invisível capturando Tab depois de fechada. */
+    transition: transform var(--t-medio) var(--mola), visibility 0s var(--t-medio);
+  }
+
+  .gaveta[data-aberto='true'] {
+    transform: none;
+    visibility: visible;
+    box-shadow: var(--elev-2);
+    transition: transform var(--t-medio) var(--mola);
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    /* 🔴 `--veu`, o MESMO token da gaveta lateral — e agora "mesma decisão do Drawer" é um
+     * fato, não uma intenção. Aqui estava `rgba(13, 20, 32, .45)`, com um comentário dizendo
+     * exatamente isso enquanto usava outra alfa (.45 contra .32) e a mesma tinta morta do kit
+     * v1. Dois scrims que ninguém escolheu ser dois: no escuro os dois falhavam igual (1,03 /
+     * 1,01, clareando o que deviam apagar) e no claro divergiam sem motivo.
+     *
+     * ⚠️ O preço, medido e aceito: no claro este véu passa de 2,95 pra 2,14 de delta. Continua
+     * um scrim claro, e um valor único é o que impede os dois de divergirem de novo. */
+    background: var(--veu);
+  }
+}
+
+/* ⚠️ Esta regra SOBREVIVE ao bloco global de `reduced-motion` do `globals.css`, e não é
+ * duplicata dele. O global zera `transition-duration`, não `transition-delay` — e aqui o
+ * que importa é o ATRASO da `visibility` (`visibility 0s var(--t-medio)`), que continuaria
+ * de pé: a gaveta fechada seguiria capturando Tab por 280ms. `transition: none` apaga a
+ * lista de propriedades inteira, atraso incluído. */
+@media (prefers-reduced-motion: reduce) {
+  .gaveta {
+    transition: none;
+  }
+}

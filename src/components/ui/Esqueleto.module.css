@@ -1,0 +1,19 @@
+/* Esqueleto.module.css — bloco de carregamento (kit v2).
+ *
+ * A VARREDURA não está aqui: ela é a `.pulsa` do `src/app/movimento.module.css`, que já
+ * tem o gradiente, a duração em `--t-lento` e o keyframe. Este módulo só dá FORMA ao bloco.
+ * Duplicar a animação aqui daria duas fontes pra mesma coisa e, na hora de calibrar o
+ * ritmo, uma delas ficaria pra trás. */
+
+.bloco {
+  /* `block` porque o padrão é empilhar (linha de texto, número, rótulo). Como `inline` ele
+   * herdaria o `line-height` do contexto e a altura pedida seria ignorada em silêncio. */
+  display: block;
+}
+
+/* Placeholder de avatar: o disco tem que ser disco enquanto carrega, senão a linha inteira
+ * salta de forma quando o dado chega — que é exatamente o incômodo que o esqueleto existe
+ * pra evitar. */
+.redondo {
+  border-radius: var(--r-pill);
+}

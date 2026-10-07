@@ -1,0 +1,103 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+/* importar.module.css — /config/importar. Kit v2.
+ *
+ * 🔴 `.cartao` VOLTOU A SER CAIXA — painel, igual ao de /config/campos. Os dois arquivos são
+ * irmãos de linguagem: mexeu num, confira o outro.
+ *
+ * ⚠️ A caixa é UMA só, e as `.etapa` continuam sendo rótulo + filete DENTRO dela. Panelizar
+ * cada etapa exigiria um wrapper por fase no `Importador.tsx` (hoje elas são `<p>` soltos), e
+ * seria errado mesmo se fosse barato: importar é UM processo com quatro fases, não quatro
+ * assuntos independentes. Quatro caixas empilhadas diriam o contrário.
+ *
+ * O gap de `.pagina` é `--s-5` nas três telas de /config porque é esse o valor que o
+ * `VoltarConfig` anula pra colar o link no cabeçalho. */
+
+.pagina { display: flex; flex-direction: column; gap: var(--s-5); }
+/* `68ch` = a medida de leitura do subtítulo do `CabecalhoPagina`. */
+.ajuda { max-width: 68ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); margin: 0; }
+.rotulo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta-2); }
+
+.cartao {
+  display: flex; flex-direction: column; gap: var(--s-4); min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-5);
+}
+
+/* 🔴 A TELA NÃO TINHA ESTRUTURA NENHUMA — só uma pilha de controles com 16px entre eles,
+ * do select de entidade à tabela de prévia e ao botão de importar. Importar é um processo
+ * com etapas ("o quê", "qual arquivo", "o que cada coluna significa", "confira", "importe"),
+ * e uma pilha plana não diz em qual delas você está nem quantas faltam. Cada etapa passa a
+ * ter rótulo `micro` em CAIXA ALTA sobre filete — a mesma anatomia (rótulo → filete →
+ * conteúdo) dos três blocos internos do editor de /automacoes, que é o outro lugar do
+ * produto onde uma tela é um formulário de várias fases.
+ *
+ * O primeiro não leva `margin-top`: ele já nasce a 24px do cabeçalho da página. */
+.etapa {
+  /* 16 + o `gap: --s-4` do `.cartao` = 28px antes de cada etapa nova, contra os 12px que
+   * separam as coisas DENTRO dela. É a distância que faz o rótulo ler como começo de seção
+   * em vez de legenda do controle logo acima. */
+  margin-top: var(--s-5);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+}
+.etapa:first-child { margin-top: 0; }
+
+/* Campo BRANCO com borda `--linha-forte`: sobre página branca, campo cinza lê como desabilitado. */
+.erro {
+  font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--erro);
+  background: var(--erro-wash); border-radius: var(--r-controle); padding: var(--s-3) var(--s-4); margin: 0;
+}
+
+.linha { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+
+/* 🔴 O tracejado FICA aqui, e só aqui na fatia. Nos outros módulos ele desenhava estado
+ * vazio e lia como "desabilitado"; num alvo de soltura de arquivo o tracejado é a convenção
+ * que diz "arraste pra cá". Fundo BRANCO, não cinza: cinza aqui voltaria a dizer desligado. */
+.upload {
+  display: inline-flex; align-items: center; gap: var(--s-3); cursor: pointer;
+  background: var(--superficie); border: 1px dashed var(--linha-forte);
+  border-radius: var(--r-controle); padding: var(--s-5); color: var(--tinta-2);
+  font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; align-self: flex-start;
+}
+.upload:hover { border-color: var(--acento); background: var(--acento-wash); color: var(--acento); }
+
+.mapaGrade { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s-4); }
+.mapaItem { display: flex; flex-direction: column; gap: var(--s-2); }
+.mapaColuna {
+  font-size: var(--fs-micro); line-height: var(--lh-micro); font-weight: 600; color: var(--tinta-3);
+  text-transform: uppercase; letter-spacing: var(--ls-micro);
+}
+
+.previaRolagem { overflow-x: auto; }
+.previa { border-collapse: collapse; width: 100%; font-size: var(--fs-body); }
+.previa th, .previa td { border: 1px solid var(--linha); padding: var(--s-3); text-align: left; white-space: nowrap; }
+.previa td { color: var(--tinta-2); }
+/* Cabeçalho de tabela: micro 11/600 CAIXA ALTA sobre `--trilho` — a segunda (e última)
+ * exceção que a escala dá ao peso 600. */
+.previa thead th {
+  background: var(--trilho); color: var(--tinta-3);
+  font-size: var(--fs-micro); line-height: var(--lh-micro); letter-spacing: var(--ls-micro);
+  text-transform: uppercase; font-weight: 600;
+}
+
+.relatorio { display: flex; flex-direction: column; gap: var(--s-4); }
+.relatorioResumo { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta); margin: 0; }
+.erroLista { margin: 0; padding-left: var(--s-5); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); }
+
+/* ── Foco: UM anel, em tudo ─────────────────────────────────────────────────── */
+.upload:focus-within {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

@@ -1,0 +1,239 @@
+/* ListCard.module.css — a receita de bloco de lista, sob a regra de contenção.
+ *
+ * 🔴 A CAIXA VOLTOU, e é o assunto deste arquivo. A regra anterior — "quase nada tem caixa" —
+ * mandava marcar o começo da seção com RÓTULO + FILETE e separar um bloco do outro com 32px
+ * de espaço. Ela foi invertida no `globals.css`: bloco de conteúdo é PAINEL, com os quatro
+ * tokens juntos (`--superficie` · `--linha` · `--r-painel` · `--elev-1`).
+ *
+ * O que saiu junto com a chegada da borda:
+ *   · o FILETE do cabeçalho — a borda do painel já diz onde a seção começa, e as duas coisas
+ *     juntas dão duas linhas horizontais a 40px de distância dizendo a mesma coisa;
+ *   · o DIVISOR entre linhas — dentro de uma caixa a lista se lê como pilha, e é o realce de
+ *     hover (com raio) que diz qual linha está sob o cursor. Era filete sobre filete sobre
+ *     borda;
+ *   · a sangria negativa do `.clicavel`, que existia pra faixa de hover não parecer um
+ *     retângulo solto no meio do branco. Com painel, ela tem uma borda pra respeitar: o
+ *     realce agora fica DENTRO, recuado pelo padding da lista.
+ *
+ * ⚠️ O cabeçalho continua tendo que casar ao pixel com o do `ChartCard.module.css`: os dois
+ * ficam lado a lado no painel e leem como um sistema só. Mexeu num, mexa no outro. */
+
+.bloco {
+  /* Item de grade. `min-width: 0` porque a trilha é `6fr` (= `minmax(auto, 6fr)`) e o
+   * `auto` deixaria o min-content da lista virar piso de largura da coluna. */
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+}
+
+/* O cabeçalho do painel. `--s-4 --s-5 --s-3`: mais respiro em cima que embaixo, porque
+ * embaixo já vem o padding da lista — somados, os dois dão a folga que o protótipo tem entre
+ * o título e a primeira linha. */
+.header {
+  display: flex;
+  align-items: center;
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+/* 13/600 `--tinta`, e não mais 13/500 `--tinta-2`. Sem caixa, um rótulo escuro roubava do
+ * filete o papel de "começo da seção" — por isso ele era etiqueta apagada. Com a caixa
+ * marcando a região, o título volta a ser título: ele nomeia o painel, e um painel sem nome
+ * legível é uma caixa cheia de números sem manchete. */
+.titulo {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-body);
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+/* O número à direita do título. `margin-left: auto` e não uma coluna de grade: ele é
+ * opcional, e sem ele o cabeçalho não pode ficar com um vão reservado. */
+.meta {
+  margin-left: auto;
+  font-size: var(--fs-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meta b {
+  color: var(--tinta);
+  font-weight: 500;
+}
+
+/* O recuo lateral menor que o do cabeçalho é o que faz o realce de hover ficar DENTRO do
+ * painel com folga em vez de encostar na borda dele. É a receita do protótipo (a lista tem
+ * 8px de recuo e a linha, 8 de padding próprio: 16 até o texto, o mesmo do cabeçalho). */
+.lista {
+  list-style: none;
+  padding: 0 var(--s-3) var(--s-3);
+  /* `flex` só pelo `gap`: 2px entre as linhas, a folga do protótipo. Sem ela os realces de
+   * hover de duas linhas vizinhas se encostam e a lista volta a parecer uma tabela. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+/* O `<li>` virou casca sem estilo: quem carrega o divisor, o padding e o hover é o `.linha`
+ * de dentro, que ora é `<div>` (linha inerte) ora é `<a>` (linha com destino). */
+.item {
+  display: block;
+}
+
+/* `min-height: var(--h-row)` é o que faz a linha ter altura de LINHA e não altura de
+ * conteúdo: com uma linha de texto ela media 12+19+12; com duas, 12+38+12. A lista
+ * pulsava conforme o negócio tivesse ou não subtítulo.
+ *
+ * ⚠️ O `border-bottom` de divisor SAIU: dentro do painel a lista já é uma pilha delimitada, e
+ * filete entre linhas somava uma terceira família de linha horizontal na mesma caixa. Quem
+ * separa uma linha da outra agora é o par realce-de-hover + os 2px de `gap` do `.lista`. */
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--h-row);
+  padding: var(--s-3);
+}
+
+/* Linha COM destino. O alvo de clique é a linha inteira, não a seta: a seta tem 15px e
+ * mirar nela num bloco de cinco itens é pior que não ter link nenhum. */
+.clicavel {
+  border-radius: var(--r-controle);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.clicavel:hover {
+  background: var(--superficie-hover);
+}
+
+.clicavel:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* A seta só aparece no hover/foco. Ela ocupa o espaço o tempo todo (opacidade, não
+ * `display`), senão a linha inteira reflui quando o mouse entra. */
+.seta {
+  flex-shrink: 0;
+  color: var(--icone-mudo);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--t-rapido) var(--suave), transform var(--t-rapido) var(--mola);
+}
+
+.clicavel:hover .seta,
+.clicavel:focus-visible .seta {
+  opacity: 1;
+  transform: none;
+}
+
+/* Slot NEUTRO, não um avatar desenhado aqui.
+ *
+ * Ele era um disco de 40px em `--acento-wash` com a letra em `--acento` — ou seja, o
+ * ListCard decidia a aparência do avatar de todo mundo, e todos os avatares do produto
+ * eram do mesmo azul (identidade que não identifica ninguém). Quem desenha agora é
+ * `components/ui/Avatar`, com a cor derivada do nome; aqui sobra só o que é do LAYOUT:
+ * não encolher e não herdar o `line-height` da linha. */
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Antes da coluna do valor, e fora dela. A `.trailing` é largura fixa alinhada à direita
+ * pra o dinheiro formar coluna; a pílula entrando ali empurraria cada valor pra um x
+ * diferente — exatamente o que aquela coluna existe pra impedir. */
+.pill {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: inline-flex;
+}
+
+/* Com a pílula presente, é ELA que come o `margin-left: auto`; a `.trailing` mantém o dela
+ * pro caso de não haver pílula, e as duas juntas ficam encostadas à direita. */
+
+.quem {
+  min-width: 0;
+}
+
+/* 500, não 600: dentro da linha a hierarquia já é feita por COR (nome em --tinta, subtítulo
+ * em --tinta-3). Somar peso a isso era o terceiro nível de negrito na mesma tela e é o que
+ * fazia a lista virar bloco. Nome e subtítulo têm o MESMO tamanho (13) de propósito — no
+ * v2 "secundário" se diz por cor, não por mais um passo de tamanho. */
+.quem b {
+  display: block;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quem small {
+  display: block;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* 🔴 Coluna de LARGURA FIXA, não só `margin-left: auto`. Empurrado pela margem, cada valor
+ * termina num x diferente — "R$ 12.000,00" e "R$ 900,00" não formam coluna, e uma lista de
+ * dinheiro sem borda direita alinhada é a diferença entre ler e reler. */
+.trailing {
+  margin-left: auto;
+  min-width: 120px;
+  text-align: right;
+  flex-shrink: 0;
+  padding-left: var(--s-4);
+}
+
+.trailing b {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.trailing small {
+  display: block;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* 🔴 NO CELULAR A COLUNA FIXA CUSTA MAIS DO QUE ENTREGA, e o custo subiu quando o bloco ganhou
+ * caixa: entre o padding do painel, o da lista e o da linha, a linha perdeu ~40px de largura
+ * útil. Medido a 375px depois da caixa: o nome do negócio truncava em "Renov…" — o dado mais
+ * importante da linha reduzido a cinco letras pra manter alinhada uma coluna de dinheiro que,
+ * numa tela dessa largura, tem duas ou três linhas pra comparar.
+ *
+ * A coluna fixa existe pra o dinheiro formar coluna (ver a nota dela acima); esse ganho é de
+ * VARREDURA, e varredura é o que não se faz num telefone. Aqui o valor volta a ocupar só o que
+ * precisa e o nome fica com o resto. */
+@media (max-width: 640px) {
+  .linha {
+    gap: var(--s-3);
+  }
+
+  .trailing {
+    min-width: 0;
+    padding-left: var(--s-3);
+  }
+}
+
+/* Alinhado à ESQUERDA, na mesma coluna de texto do título e das linhas — não centralizado.
+ * Centralizado, ele fica centralizado em relação à CAIXA, e o olho que estava descendo pela
+ * borda esquerda da lista perde o fio. O recuo tem que somar o do `.lista` (8) com o da
+ * `.linha` (8) pra cair exatamente sob o título. */
+.vazio {
+  padding: var(--s-2) var(--s-5) var(--s-5);
+  font-size: var(--fs-body);
+  color: var(--tinta-3);
+}

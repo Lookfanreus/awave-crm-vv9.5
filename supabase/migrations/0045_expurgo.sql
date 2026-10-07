@@ -1,0 +1,29 @@
+-- 0045_expurgo.sql — o indice que faz o expurgo da conversa de teste ser barato.
+--
+-- ⚠️ ADITIVA: so cria indice. Nenhuma tabela muda, nenhuma coluna sai, nenhuma linha muda de
+-- valor, nenhuma chamada existente para de resolver. Migration que falha e container que NAO
+-- SOBE, em toda instalacao — o painel mantem a versao anterior servindo e quem comprou nao
+-- entende por que a atualizacao "nao pegou".
+--
+-- 🔴 O ARQUIVO E PEQUENO DE PROPOSITO, E ISSO E O RELATORIO. As outras tres frentes do braco de
+-- retencao (`src/server/canais/expurgo.ts`) NAO precisam de indice novo, e vale escrever por
+-- que — senao alguem "completa" esta migration criando indice que so ocupa espaco num banco de
+-- 500 MB:
+--   · `atendimento_jobs` — o predicado e `status in ('done','dead') and atualizado_em < corte`,
+--     e a `0028` ja criou `atendimento_jobs_deploy_janela_idx` sobre `(atualizado_em desc)`;
+--   · `custos_ia` — o predicado e `criado_em < corte`, e a `0029` ja criou `custos_ia_deploy_idx`
+--     sobre `(criado_em desc)`;
+--   · os objetos do bucket nao passam pelo Postgres: a varredura cruza a listagem do Storage
+--     com `mensagens` pela CHAVE PRIMARIA.
+--
+-- 🔴 O EXPURGO DA CONVERSA DE TESTE E O UNICO QUE NAO TINHA CAMINHO. Ele apaga por
+-- `(workspace_id, canal_id, criado_em)`, e os dois indices que existem em `conversas` (`0022`)
+-- sao `(workspace_id)` e `(workspace_id, status, ultima_mensagem_em desc)` — nenhum dos dois
+-- alcanca `canal_id`. Sem este indice, a limpeza diaria varre TODAS as conversas do espaco de
+-- trabalho, que na caixa de entrada de quem usa o produto e a tabela que mais cresce.
+--
+-- ⚠️ E ELE E O INDICE DE UM CAMINHO DESTRUTIVO, o que muda o custo de estar errado: uma varredura
+-- sequencial aqui nao seria so lenta — ela seguraria lock de linha sobre a caixa de entrada
+-- inteira do inquilino, uma vez por dia, num `delete`.
+create index if not exists conversas_canal_idade_idx
+  on public.conversas (workspace_id, canal_id, criado_em);

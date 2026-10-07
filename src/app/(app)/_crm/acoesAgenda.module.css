@@ -1,0 +1,18 @@
+/* acoesAgenda.module.css — Concluir/Reagendar de uma atividade agendada.
+ * Compartilhado pela agenda e pelo detalhe do negócio.
+ *
+ * 🔴 Sobrou UMA regra, e o cabeçalho antigo explica por quê melhor que qualquer resumo. Ele
+ * dizia: "Os três botões seguem a tabela de controles do kit: secundário = `--superficie` +
+ * borda `--linha-forte`, primário = `--acento` com `--tinta-invertida`, raio `--r-controle` —
+ * e não o `--r-pequeno` que sairia do rename mecânico". Ou seja: um parágrafo de prosa
+ * pedindo que este arquivo não divergisse dos outros dez que desenhavam a mesma coisa.
+ *
+ * Prosa não é barreira. Os três botões agora são `Botao` (`tom="ok"` no Concluir) e o campo é
+ * `Entrada` — a tabela de controles virou código em vez de instrução. */
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}

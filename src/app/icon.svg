@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Ícone da aba do navegador. O nome do arquivo É a convenção do App Router do Next: um
+    `icon.svg` na raiz de `app/` faz o framework emitir o <link rel="icon"> sozinho, sem
+    nenhuma linha no layout. Renomear quebra em silêncio — a aba volta a ficar sem ícone.
+
+    É o MESMO lockup de marca da barra lateral e das telas de entrada: tile com degradê de
+    145° e o glifo branco de grade por cima. Ícone diferente na aba e dentro do produto lê
+    como dois produtos.
+
+    🔴 OS NOMES DE TOKEN ABAIXO APARECEM SEM OS DOIS HÍFENS DE PROPÓSITO. Dois hífens
+    seguidos são PROIBIDOS dentro de comentário XML: o navegador recusa o arquivo inteiro e
+    a aba volta a ficar sem ícone — exatamente o bug que este arquivo veio consertar, e sem
+    nenhum aviso, porque build e teste continuam verdes com um SVG inválido. Escrever o
+    nome completo do token aqui dentro quebra o ícone. (Foi o que aconteceu na primeira
+    versão deste arquivo, achada só ao abrir a imagem no navegador.)
+
+    Os hex estão à mão porque `var()` não resolve em arquivo de ícone — não há CSS aqui.
+    São cópias dos tokens `acento` (#8B72FF) e `marca-fim` (#6E4BFF) do globals.css: mudou
+    a marca lá, mude aqui também, senão a aba fica com a cor velha.
+
+    🔴 OS DOIS SAEM DO BLOCO `:root`, ou seja da paleta ESCURA, e isso é escolha, não acaso.
+    O ícone da aba é UM só e não tem tema: quem o desenha é a barra do navegador, fora do
+    documento, onde nenhum atributo nosso alcança — não há como servir dois. Sendo um só, ele
+    copia o lado que faz PAR: `marca-fim` existe apenas no bloco escuro e nunca é sobrescrito
+    no claro, de propósito (a assinatura da marca não rebranda por tema), então tirar o acento
+    do bloco claro montaria um degradê que não existe em tema nenhum, metade de um e metade do
+    outro. Somado a isso, o escuro é o tema PADRÃO do produto. Mesma decisão, e pelo mesmo
+    motivo, da rampa do funil em `src/lib/rampa.ts`.
+
+    O `linear-gradient(145deg, …)` do CSS não existe em SVG: o ângulo vira dois pontos na
+    caixa do elemento. Para um quadrado, 145° (medido do topo, horário) dá a reta que vai de
+    (0.1006, -0.0704) a (0.8994, 1.0704) — é o mesmo degradê, não uma aproximação diagonal.
+  -->
+  <defs>
+    <linearGradient id="marca" x1="0.1006" y1="-0.0704" x2="0.8994" y2="1.0704">
+      <stop offset="0" stop-color="#8B72FF"/>
+      <stop offset="1" stop-color="#6E4BFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Raio 7 sobre 32: a mesma proporção do tile de 28px com o token `r-pequeno` (6px).
+       Era 4, de quando o menor degrau de raio do kit valia 4px. O degrau subiu pra 6 na
+       remodelação e este arquivo ficou pra trás — a aba mostrava um canto mais quadrado que o
+       do tile que ela existe pra espelhar. Nenhum gate pega isso: `var()` não chega aqui. -->
+  <rect width="32" height="32" rx="7" fill="url(#marca)"/>
+
+  <!--
+    O glifo de grade em 18 de 32 (a mesma proporção do tile da barra lateral: 16 em 28).
+    A arte nasce numa caixa de 24, então `scale(0.75)` a encaixa em 18 e `translate(7 7)`
+    a centraliza. O traço fica em 2 de propósito: escalado, dá 1,5 na caixa de 32 — a mesma
+    espessura relativa que o ícone tem dentro do produto.
+  -->
+  <g transform="translate(7 7) scale(0.75)" fill="none" stroke="#FFFFFF" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round">
+    <rect width="7" height="7" x="3" y="3" rx="1"/>
+    <rect width="7" height="7" x="14" y="3" rx="1"/>
+    <rect width="7" height="7" x="14" y="14" rx="1"/>
+    <rect width="7" height="7" x="3" y="14" rx="1"/>
+  </g>
+</svg>

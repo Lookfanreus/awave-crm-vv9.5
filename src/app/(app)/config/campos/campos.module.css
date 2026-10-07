@@ -1,0 +1,194 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+/* campos.module.css — /config/campos. Kit v2.
+ *
+ * 🔴 `.cartao` VOLTOU A SER CARTÃO — painel, com os quatro tokens da receita (ver a regra de
+ * contenção no `globals.css`). Ele passou uma temporada sendo um nome sem regra: a versão
+ * anterior desta nota dizia que só o que FLUTUA ou CONTÉM pilha rolável ganha superfície, e
+ * por isso a tela ficou com dois blocos separados só por espaço.
+ *
+ * O gap de `.pagina` é `--s-5` nas TRÊS telas irmãs de /config (campos, funis, importar) —
+ * eram 20, 20 e 12 — porque o `VoltarConfig` anula exatamente esse valor pra colar o link no
+ * cabeçalho. Com três gaps diferentes, o `-12` dele só acertava numa das três.
+ *
+ * ⚠️ É por isso que o gap do `.pagina` NÃO caiu pra 12 aqui como caiu nas telas sem
+ * `VoltarConfig`: mexer nele descola o link "voltar" do cabeçalho, e não há teste que pegue
+ * isso (está escrito no `VoltarConfig.module.css`). O vão entre painéis vem do `+` abaixo. */
+
+.pagina { display: flex; flex-direction: column; gap: var(--s-5); }
+
+/* ⚠️ NEGATIVO, e é o preço de manter o gap do `.pagina` em 16 por causa do `VoltarConfig`:
+ * −4 sobre 16 dá os 12 do protótipo entre dois painéis. Antes ele era +16, somando 32 — o vão
+ * que a regra de contenção antiga pedia entre blocos sem moldura. */
+.cartao + .cartao { margin-top: calc(var(--s-2) * -1); }
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-5);
+}
+
+/* Rótulo de bloco: 13/600 `--tinta` desde que a caixa voltou. Já foi 18/600 (fora da escala)
+ * e 13/500 `--tinta-2` (apagado pra não roubar do filete o papel de marcar a seção). */
+.subtitulo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 600; letter-spacing: -0.005em; color: var(--tinta); margin: 0; }
+/* `68ch` = a medida de leitura do subtítulo do `CabecalhoPagina`. O parágrafo da matriz
+ * ("Marque Obrigatório para exigir…") corria os 1150px do conteúdo numa linha só. */
+.ajuda { max-width: 68ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); margin: 0; }
+
+/* 🔴 A LISTA DE CAMPOS NÃO TINHA CABEÇALHO NENHUM — nem rótulo, nem filete. Ela começava
+ * direto depois da linha de criação e nada dizia onde o formulário acaba e a lista começa;
+ * com zero campos, a tela era um segmented, uma linha de inputs e uma frase cinza solta. É a
+ * mesma lacuna que a rodada de /relatorios achou no `.construtor`.
+ *
+ * ⚠️ O filete daqui FICA mesmo com o painel: ele é sub-rótulo DENTRO da caixa, e a borda do
+ * painel está a duas seções de distância. `min-height: var(--h-control)` mantém este filete
+ * no mesmo y do `.matrizTopo` logo abaixo. */
+.listaCab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: var(--h-control);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+}
+
+.meta {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Segmented de entidade ───────────────────────────────────────────────────── */
+
+/* Trilho `--trilho`; ativo = `--superficie` + borda `--linha-forte`, NÃO azul sólido. O segmented
+ * diz "qual recorte estou vendo", não "clique aqui" — sólido ele competia com o botão
+ * primário da mesma linha. Mesma receita do `.periodo` do painel e do `.filtro` da agenda. */
+.segmentado {
+  display: inline-flex; gap: var(--s-1); background: var(--trilho);
+  padding: var(--s-1); border-radius: var(--r-controle); align-self: flex-start;
+}
+.segmento {
+  padding: var(--s-2) var(--s-4); border: 1px solid transparent; border-radius: var(--r-pequeno);
+  font-size: var(--fs-body); line-height: var(--lh-body);
+  font-weight: 500; color: var(--tinta-3); text-decoration: none;
+}
+.segmento:hover { color: var(--tinta); }
+.segmentoAtivo, .segmentoAtivo:hover { background: var(--superficie); border-color: var(--linha-forte); color: var(--tinta); }
+
+/* ── Formulário de criação ───────────────────────────────────────────────────── */
+
+/* Teto de largura: o campo "Novo campo (ex.: Valor do contrato)" ocupava 660px numa linha
+ * de 1150 e os dois selects flutuavam colados na borda direita da tela. Uma linha de criação
+ * é um controle, não um cabeçalho de página — ela não precisa da largura do conteúdo. */
+.novoRow { display: flex; gap: var(--s-3); flex-wrap: wrap; align-items: center; max-width: 860px; }
+
+/* Campo BRANCO com borda `--linha-forte`: sobre página branca, campo cinza lê como desabilitado. */
+/* Botão TERCIÁRIO: sem fundo, texto `--tinta-3`, hover `--superficie-hover` — o hover de linha SOBRE
+ * branco, porque é sobre branco que este botão vive agora. */
+/* ── Lista de campos ─────────────────────────────────────────────────────────── */
+
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* `border-bottom`, não `border-top`: o filete do `.listaCab` já fecha o topo da lista, e
+ * com `border-top` na primeira linha havia DOIS filetes a 12px um do outro. */
+.item { min-height: var(--h-row); padding: var(--s-2) 0; border-bottom: 1px solid var(--linha); }
+.item:last-child { border-bottom: 0; }
+.itemArquivado { opacity: .6; }
+.itemTopo { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
+/* 13/500: dentro da linha a hierarquia já é feita por COR. Era 14/600 — o 14 sumiu da escala
+ * e o 600 ficou reservado a micro em caixa alta e cabeçalho de tabela. */
+.itemNome {
+  display: inline-flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta);
+}
+.acoes { display: inline-flex; gap: var(--s-2); }
+
+.tag {
+  border-radius: var(--r-pill); background: var(--trilho); color: var(--tinta-3);
+  font-size: var(--fs-micro); line-height: var(--lh-micro); letter-spacing: var(--ls-micro);
+  text-transform: uppercase; font-weight: 600; padding: var(--s-1) var(--s-3);
+}
+.tagUso {
+  border-radius: var(--r-pill); background: var(--acento-wash);
+  color: var(--acento); font-size: var(--fs-micro); line-height: var(--lh-micro);
+  font-weight: 600; padding: var(--s-1) var(--s-3); font-variant-numeric: tabular-nums;
+}
+
+/* Vazio: `--tinta-3` (5,74:1) no lugar do `--text-subtle` de 2,58:1. */
+.vazio { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); margin: 0; }
+.erro {
+  font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--erro);
+  background: var(--erro-wash); border-radius: var(--r-controle); padding: var(--s-3) var(--s-4); margin: 0;
+}
+
+/* ── Opções de seleção ───────────────────────────────────────────────────────── */
+
+.opcoes {
+  display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  margin-top: var(--s-3); padding-left: var(--s-4);
+}
+.opcoesLabel {
+  font-size: var(--fs-micro); line-height: var(--lh-micro); font-weight: 600;
+  letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tinta-3);
+}
+.opcoesLista { list-style: none; display: flex; gap: var(--s-3); flex-wrap: wrap; margin: 0; padding: 0; }
+.opcaoChip {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  background: var(--trilho); color: var(--tinta-2); border-radius: var(--r-pill);
+  font-size: var(--fs-body); line-height: var(--lh-body);
+  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-3);
+}
+/* O X de remover dentro do chip virou `Botao` só-ícone. As regras que moravam aqui
+ * (`.opcaoChip button`) tinham que sair: o componente renderiza um `<button>` real e o
+ * seletor descendente continuaria casando. */
+.opcoesNova { display: inline-flex; gap: var(--s-2); align-items: center; }
+
+/* ── Matriz campos × etapas ──────────────────────────────────────────────────── */
+
+/* O filete do bloco vai aqui (título + ação numa linha só ocupa a largura do bloco). */
+.matrizTopo {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
+  padding-bottom: var(--s-3); border-bottom: 1px solid var(--linha);
+}
+.matrizRolagem { overflow-x: auto; }
+.matriz { border-collapse: collapse; width: 100%; font-size: var(--fs-body); }
+.matriz th, .matriz td {
+  border: 1px solid var(--linha); padding: var(--s-3);
+  text-align: left; vertical-align: top;
+}
+/* Cabeçalho de tabela: a SEGUNDA (e última) exceção que a escala dá ao peso 600 — micro em
+ * CAIXA ALTA com tracking, sobre `--trilho`. */
+.matriz thead th {
+  background: var(--trilho); color: var(--tinta-3);
+  font-size: var(--fs-micro); line-height: var(--lh-micro); letter-spacing: var(--ls-micro);
+  text-transform: uppercase; font-weight: 600; white-space: nowrap;
+}
+.matriz tbody th { font-weight: 500; color: var(--tinta); white-space: nowrap; }
+.check {
+  display: flex; align-items: center; gap: var(--s-2); color: var(--tinta-2);
+  font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 400; cursor: pointer;
+}
+.check input { accent-color: var(--acento); }
+
+@media (max-width: 1024px) {
+  .novoRow { flex-direction: column; align-items: stretch; }
+  /* ⚠️ Em COLUNA o `flex: 1 1 240px` do .input passa a valer como ALTURA (flex-basis segue
+     o eixo principal) e o input vira uma caixa de 240px. Reseta a base no empilhado. */
+  .novoRow input { flex: 0 0 auto; } /* layout, não aparência */
+}
+
+/* ── Foco: UM anel, em tudo ─────────────────────────────────────────────────── */
+.segmento:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

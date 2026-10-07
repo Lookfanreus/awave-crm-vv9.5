@@ -1,0 +1,27 @@
+/* Delta.module.css — seta + percentual (kit v2).
+ *
+ * 13/500, não 12/600: no v2 não existe 12 na escala, e o peso 600 aqui somava um terceiro
+ * nível de negrito no rodapé do KPI. A cor semântica já basta pra o delta saltar. */
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.cima {
+  color: var(--ok);
+}
+
+.baixo {
+  color: var(--erro);
+}
+
+.muted {
+  color: var(--tinta-3);
+  font-weight: 500;
+}

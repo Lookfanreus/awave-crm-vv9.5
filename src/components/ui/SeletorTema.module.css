@@ -1,0 +1,75 @@
+/* SeletorTema.module.css — o controle de tema (claro/escuro).
+ *
+ * Ele monta em DOIS fundos diferentes: nas seis telas fora do shell o chão é `--trilho`, e no
+ * menu da conta é `--superficie`. Por isso nenhum dos dois pode ser o fundo dele — a moldura
+ * é `--superficie` + `--linha-forte`, e quem marca a opção escolhida é o poço `--trilho`. Um
+ * controle que some num dos dois lugares é um botão que a pessoa não acha justamente na tela
+ * onde ela ainda não tem conta.
+ *
+ * ⚠️ Visual MÍNIMO de propósito: a camada de componente do produto ainda vai reestilizar este
+ * controle junto com os outros. O que não é provisório aqui é o foco e o estado — os dois
+ * saem do `aria-pressed`, não de uma classe paralela que alguém pode esquecer de sincronizar
+ * com o atributo que o leitor de tela anuncia. */
+
+.grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  padding: var(--s-1);
+}
+
+.opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--h-control);
+  padding: 0 var(--s-4);
+  border: 0;
+  background: transparent;
+  /* Um degrau ABAIXO do raio do grupo: raio igual em caixa e conteúdo deixa o canto interno
+   * parecendo mal encaixado. */
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-3);
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave), color var(--t-rapido) var(--suave);
+}
+
+.opcao svg {
+  color: var(--icone-mudo);
+  flex-shrink: 0;
+}
+
+.opcao:hover {
+  background: var(--superficie-hover);
+  color: var(--tinta);
+}
+
+/* A opção que está valendo. O poço (`--trilho`) e não cor de acento: acento aqui competiria
+ * com o botão primário da tela, que numa tela de login é a única ação que importa. */
+.opcao[aria-pressed='true'] {
+  background: var(--trilho);
+  color: var(--tinta);
+}
+
+.opcao[aria-pressed='true'] svg {
+  color: var(--tinta-2);
+}
+
+/* UM anel, igual ao resto do produto: outline, nunca box-shadow. */
+.opcao:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Em voo. `aria-disabled` e não `:disabled` — o porquê está no `.tsx`, e é sobre não roubar o
+ * foco de quem navega por teclado no meio da própria ação. */
+.opcao[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}

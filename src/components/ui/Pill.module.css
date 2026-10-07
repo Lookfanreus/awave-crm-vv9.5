@@ -1,0 +1,62 @@
+/* Pill.module.css — pílula de status com ponto (kit v2, protótipo aprovado).
+ *
+ * SUCEDE o `Badge` (apagado nesta task): mesma tipografia — 11/600 em CAIXA ALTA com
+ * tracking, o único uso legítimo do tamanho 11 na escala — mais o PONTO colorido, que é o
+ * que o `Badge` não tinha e o que o dono pediu ao dizer que faltava vocabulário.
+ *
+ * 🔴 O ponto não é enfeite: é FORMA ALÉM DE COR. "28D" em vermelho e "5 DIAS" em cinza se
+ * distinguem só pelo matiz, e ~8% dos homens não separa esse par; com o ponto, a pílula
+ * carrega um segundo canal (presença e cor de um disco) que sobrevive à daltonia e ao
+ * monitor mal calibrado do comprador. É por isso que o ponto é o default e não um opt-in. */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  border-radius: var(--r-pill);
+  padding: var(--s-1) var(--s-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-micro);
+  line-height: var(--lh-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* `currentColor`: o ponto herda a cor da variante, então uma variante nova acerta o ponto
+ * de graça e nunca fica um disco de uma cor com um texto de outra. */
+.ponto {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background: currentColor;
+}
+
+/* Os cinco pares vêm prontos do `:root` e já são conferidos por `contraste-tokens.spec.ts`
+ * (frente sobre o `-wash` correspondente). Não há cor solta aqui de propósito: pílula é
+ * exatamente o lugar onde alguém inventa um verde "só um pouco mais claro". */
+.ok {
+  background: var(--ok-wash);
+  color: var(--ok);
+}
+
+.aviso {
+  background: var(--aviso-wash);
+  color: var(--aviso);
+}
+
+.erro {
+  background: var(--erro-wash);
+  color: var(--erro);
+}
+
+.neutro {
+  background: var(--trilho);
+  color: var(--tinta-3);
+}
+
+.accent {
+  background: var(--acento-wash);
+  color: var(--acento);
+}

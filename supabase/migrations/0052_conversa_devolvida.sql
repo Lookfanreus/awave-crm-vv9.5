@@ -1,0 +1,55 @@
+-- 0052_conversa_devolvida.sql — devolver a conversa ao assistente passa a deixar marca.
+--
+-- ⚠️ ADITIVA no sentido estrito: uma coluna nova, sem `not null`, sem default e sem backfill.
+-- Nenhuma linha existente e reescrita, nenhum dominio estreita, nenhum objeto some. Um
+-- servidor que atualizar para esta versao e nao ligar o assistente continua identico, e o
+-- `if not exists` a torna re-executavel — ela roda uma vez e nao tem nada a fazer na segunda.
+--
+-- ── O QUE ELA CONSERTA ─────────────────────────────────────────────────────────────────
+--
+-- 🔴 A DEVOLUCAO NAO DEIXAVA MARCA NENHUMA NO ESTADO, e sem marca o dreno do assistente nao
+-- tem como distinguir "ja escalei por causa desta fala do cliente" de "escalei ANTES de uma
+-- pessoa devolver a conversa". O carimbo que ele lia era `escalada_em`, e ele responde a
+-- outra pergunta.
+--
+-- A sequencia que quebrava, medida contra o codigo de producao:
+--   1. o cliente pede um atendente. A conversa vira `aguardando_humano`, `escalada_em` = T0, e
+--      a confirmacao sai;
+--   2. ninguem aparece — nao ha notificacao, e isso esta escrito na propria confirmacao — e o
+--      cliente insiste em T1 > T0. Essa mensagem nao agenda rodada nenhuma, mas empurra
+--      `ultima_msg_in_at` para T1;
+--   3. o operador le a conversa, decide que o assistente resolve, e devolve: o status volta
+--      para `aberta`, o responsavel e solto, e a rodada e agendada;
+--   4. no dreno, `escalada_em` (T0) e MAIS VELHO que `ultima_msg_in_at` (T1). A guarda conclui
+--      que ainda nao escalou por causa daquela fala, o pedido do passo 2 casa de novo, e a
+--      conversa volta para a fila humana — com a confirmacao repetida ao cliente. O clique do
+--      operador e desfeito em um tick;
+--   5. na segunda devolucao a guarda ate segura (a re-escalacao do passo 4 renovou
+--      `escalada_em`), mas ai o lote ja fechou na confirmacao entregue e o assistente fica
+--      MUDO. O cliente termina com duas confirmacoes e nenhuma resposta.
+--
+-- ⚠️ E NENHUM CARIMBO EXISTENTE SERVIA. Os quatro candidatos foram descartados com motivo, e
+-- reabrir qualquer um deles reabre o defeito por outra porta:
+--   · `escalada_em`   — a devolucao e PROIBIDA de limpa-lo: ele e a unica guarda contra o laco
+--     de re-escalacao do pedido que fica no historico para sempre;
+--   · `assumida_em`   — a propria devolucao o ZERA; ele e o "desde quando" da pausa;
+--   · `atualizado_em` — anda ate quando alguem so ABRE a conversa, entao le-lo faria abrir a
+--     conversa suprimir a escalacao, em silencio;
+--   · o relogio da fila — ele anda por mensagem E por devolucao, entao separar as duas causas
+--     dependeria de precisao entre relogios de maquinas diferentes.
+--
+-- ── O QUE `null` SIGNIFICA, E POR QUE NAO HA BACKFILL ──────────────────────────────────
+--
+-- 🔴 NULO E "NUNCA DEVOLVIDA", e ele e o chao de TODA linha que existe hoje. A leitura do
+-- dreno so suprime uma escalacao quando o carimbo e mais novo que a ultima fala do cliente;
+-- nulo nunca e mais novo que coisa nenhuma, entao toda conversa existente decide exatamente
+-- como decidia antes desta coluna. Um backfill com `now()` faria o contrario, e o preco seria
+-- alto: calaria de uma vez o pedido de atendente de toda conversa que estivesse esperando uma
+-- pessoa no instante da atualizacao.
+--
+-- E carimbo VELHO tambem nao cala ninguem, pela mesma aritmetica: para suprimir, ele tem de
+-- ser mais novo que a ultima fala do cliente, e qualquer fala POSTERIOR a devolucao e mais
+-- nova que ela. E por isso que acao nenhuma precisa limpar esta coluna — nem assumir, nem
+-- arquivar: um valor obsoleto e inerte por construcao, e nao por disciplina de quem escreve.
+alter table public.conversas
+  add column if not exists devolvida_em timestamptz;

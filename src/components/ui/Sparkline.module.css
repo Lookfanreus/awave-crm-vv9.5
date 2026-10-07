@@ -1,0 +1,153 @@
+/* Sparkline.module.css — a curva miúda do card de KPI (kit v2).
+ *
+ * 🔴 Todo estado FINAL é o estado BASE, e as `@keyframes` só definem o `from`. Não é
+ * estilo: é o que faz `prefers-reduced-motion` funcionar de graça. O bloco global do
+ * `globals.css` zera a duração pra `.01ms` em vez de usar `animation: none` — com `none`, um
+ * `from { opacity: 0 }` escrito ao contrário (base = escondido, `to` = visível, `forwards`)
+ * deixaria a curva PERMANENTEMENTE apagada pra quem pediu menos movimento.
+ * Escrito assim, quem pede menos movimento vê a curva pronta, que é o pedido.
+ *
+ * Pelo mesmo motivo não há `@media (prefers-reduced-motion)` aqui: duas fontes pra mesma
+ * garantia divergem, e a que fica errada é sempre a local (ver `movimento.module.css`). */
+
+/* ── O invólucro: é ele que dá ao disco de hoje um sistema de coordenadas NÃO esticado ──
+ *
+ * 🔴 O `position: relative` aqui não é organização de layout, é a correção de um bug de
+ * geometria. O `<svg>` estica 100 unidades de viewBox pela largura da coluna do KPI
+ * (`preserveAspectRatio="none"`, e a coluna tem ~283px), então lá dentro a escala é 2,83 em
+ * X e 1,00 em Y. Um `<circle>` sob escala não-uniforme é ELIPSE — o disco de "hoje" media
+ * 12,46 × 4,40 px, medido no navegador, e lia como ponta de flecha. O disco virou `<span>`
+ * HTML posicionado em % sobre este invólucro: fora do SVG, o px é px nos dois eixos.
+ *
+ * A regra, pra qualquer coisa que se acrescente depois: no SVG só entra o que sobrevive a
+ * ser esticado em X (caminho, e espessura via `non-scaling-stroke`). Círculo, quadrado,
+ * texto e ícone entram aqui, no HTML. */
+.plot {
+  position: relative;
+  margin-top: var(--s-4);
+  /* O disco fica exatamente na borda direita (x = 100%) e é centrado por `translate(-50%)`:
+   * sem isto, metade dele é cortada — justo o ponto mais importante da curva. */
+  overflow: visible;
+  /* 🔴 O recuo é o que tira o disco de cima do FILETE DIVISOR da faixa de KPI.
+   * `.faixaKpi > * + *` põe um `border-left` na quina esquerda das colunas 2-4, ou seja, o
+   * filete cai exatamente na borda DIREITA das colunas 1-3. Com o disco centrado em x=100%
+   * ele sobrava 3px (metade do diâmetro) além da coluna e pousava em cima da linha, metade
+   * de cada lado. 8px deixam 5px de ar entre o disco e o filete.
+   *
+   * Não é a "sobra à direita" que o `lib/sparkline.ts` proíbe: aquilo é a série não chegar
+   * ao fim da CAIXA, e afirma que os dados pararam antes de hoje. Aqui a caixa inteira
+   * encolheu, igual nas quatro colunas — é goteira de layout, não afirmação sobre o dado. */
+  margin-right: var(--s-3);
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* O disco de HOJE. Diâmetro em px de TELA, e é essa a diferença que conserta a elipse: o
+ * tamanho não passa por transformação nenhuma. 6px é o mesmo disco que identifica a etapa no
+ * funil do painel (`.ponto`) — o produto já tem um tamanho de marcador de dado, e este é ele.
+ *
+ * `--cor-serie` vem inline do `.tsx`, do MESMO token que pinta a linha. Antes dele existir de
+ * fato, essa custom property era declarada no `<svg>` e nenhuma regra a lia: a cor viajava e
+ * morria. */
+.hoje {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--cor-serie);
+  /* Centra o disco NO ponto: sem isto ele pendura pela quina superior esquerda e passa a
+   * apontar pra um dia e um valor que não são os dele. */
+  transform: translate(-50%, -50%);
+  /* O disco é o último a aparecer — ele é a conclusão da frase que a linha desenhou.
+   * `opacity: 1` explícito, mesmo sendo o valor inicial: é a convenção do topo do arquivo
+   * (estado FINAL = estado BASE) e é o que deixa visível, lendo a regra, que quem pediu
+   * menos movimento vê o disco aceso. */
+  opacity: 1;
+  animation: revela var(--t-medio) var(--suave);
+}
+
+/* ── O traço ──────────────────────────────────────────────────────────────────────────
+ *
+ * 🔴 A linha JÁ FOI "desenhada da esquerda pra direita", por `stroke-dasharray: 1` sobre um
+ * `pathLength="1"`, e essa animação PARTIA a curva na tela. Ela saiu, e o motivo precisa
+ * ficar escrito porque a receita é conhecida e alguém vai querer devolvê-la.
+ *
+ * O `pathLength` normaliza o comprimento no espaço do VIEWBOX. O `vector-effect:
+ * non-scaling-stroke` do mesmo `<path>` — que é obrigatório, senão a espessura estica junto
+ * com o eixo X e o traço de 1,6px vira uma faixa — faz o tracejado ser medido no espaço da
+ * TELA. Os dois espaços diferem exatamente pelo fator de esticamento em X, que é a largura
+ * da coluna dividida por 100. Resultado medido no painel, numa coluna de 239px: o dash que
+ * deveria valer "a curva inteira" cobria menos da metade dela, o resto reaparecia como um
+ * segundo tracinho solto, e sobrava um vão logo antes do disco de hoje. Nos três KPIs. A
+ * 375px o vão fica ainda maior, porque o fator muda.
+ *
+ * 🔴 **E nenhuma constante conserta**: o fator é a largura da coluna, que é fluida e que um
+ * Server Component não tem como medir. Ou o traço não é tracejado, ou a animação vira
+ * JavaScript — e JavaScript não é alcançado pelo bloco global de `reduced-motion`.
+ *
+ * Fica a revelação por opacidade, a mesma da área e do disco. `--t-medio` contra o
+ * `--t-lento` da área preserva a ordem que importa (a forma primeiro, o peso depois) sem
+ * depender de geometria nenhuma. */
+.linha {
+  opacity: 1;
+  animation: revela var(--t-medio) var(--suave);
+}
+
+/* A área entra DEPOIS da linha, e por revelação de opacidade: duas coisas se revelando na
+ * mesma velocidade viram uma mancha só. A linha conta a forma; a área só dá peso depois que
+ * a forma já está lá.
+ *
+ * O peso dela é 0,10 de opacidade no topo do degradê (era 0,22), e o valor está no `.tsx`
+ * porque `<stop>` só aceita atributo. Ver a justificativa lá: sob um platô de dezoito dias
+ * a área não é sombra da curva, é uma laje. */
+.area {
+  opacity: 1;
+  animation: revela var(--t-lento) var(--suave);
+}
+
+@keyframes revela {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── O trilho vazio: KPI SEM série ────────────────────────────────────────────────────
+ *
+ * 🔴 Ocupa a MESMA altura da curva, de propósito. Os quatro KPIs são uma faixa só; um
+ * espaço em branco onde os vizinhos têm linha lê como render que falhou, e o vizinho em
+ * questão é justamente o card que a pessoa deveria olhar. O tracejado + a frase dizem
+ * "não há curva aqui, e este é o motivo" — que é uma afirmação, não uma ausência.
+ *
+ * O que ele NUNCA faz é insinuar dado: sem cor de série, sem ponto, sem inclinação. */
+.vazio {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  min-width: 0;
+  /* O MESMO recuo do `.plot`, e ele é obrigatório aqui. Os quatro KPIs são uma faixa só, com
+   * anatomia idêntica; se só as curvas recuassem, o trilho tracejado do "Parados" terminaria
+   * 8px à direita das três vizinhas — uma desigualdade que se enxerga de relance justamente
+   * porque as quatro linhas nascem na mesma altura. */
+  margin-right: var(--s-3);
+}
+
+.trilho {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-top: 1px dashed var(--linha);
+}
+
+.motivo {
+  color: var(--tinta-3);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: var(--ls-micro);
+  line-height: var(--lh-micro);
+  flex: 0 0 auto;
+}

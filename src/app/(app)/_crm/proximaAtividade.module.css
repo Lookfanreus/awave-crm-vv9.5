@@ -1,0 +1,113 @@
+/* proximaAtividade.module.css — "Próxima atividade" + nudge, no detalhe do negócio (kit v2).
+ *
+ * 🔴 A CAIXA É PAINEL, E A BARRA DE ESTADO FICA. As duas coisas juntas, e é a soma que
+ * importa: com a regra de contenção invertida este bloco volta a ter superfície como os
+ * irmãos dele (`Timeline`, `ComporAtividade`) — sem ela, ele era o único da coluna sem
+ * caixa e lia como texto que caiu ali.
+ *
+ * O que NÃO volta é a caixa antiga: `--acento-wash` inteiro com borda `--acento-linha`, um
+ * cartão azul claro entre dois brancos, azul nos dois estados. A informação de estado mora na
+ * BARRA de 2px da borda esquerda, que muda de cor — `--acento` no prazo, `--erro` em atraso.
+ * Painel neutro + barra colorida diz as duas coisas sem pintar a região inteira de uma delas.
+ *
+ * Dois pixels são a dose que o kit autoriza pra cor que é DADO — ponto de 6px ou barra de
+ * 2px, nunca preenchimento grande —, e é o mesmo vocabulário da barra de etapa no topo da
+ * raia do kanban: o produto passa a ter um jeito só de dizer "esta região tem um estado".
+ *
+ * O 600 do "há X dias em atraso" caiu pra 500: a escala reserva o 600 a rótulo de 11px em
+ * caixa alta e cabeçalho de tabela. Quem diz "atrasado" aqui é a cor `--erro`. */
+
+/* 🔴 `border-left` de 2px + `border` de 1px na mesma regra: a barra é a borda ESQUERDA
+ * engrossada e recolorida, não um pseudo-elemento. Com `overflow` nenhum e raio 14, a barra
+ * acompanha a curva dos dois cantos da esquerda sozinha — que é o que um pseudo absoluto não
+ * faria sem um segundo `border-radius` pra manter em sincronia. */
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-left: 2px solid var(--acento);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-4) var(--s-5);
+}
+
+.blocoAtraso {
+  border-left-color: var(--erro);
+}
+
+.rotulo {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-micro);
+  color: var(--acento);
+}
+
+.rotuloAtraso { color: var(--erro); }
+
+.corpo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+/* 24px, a mesma família do disco da timeline e do `Avatar` `sm`. Sem a caixa em volta, um
+ * tile de 32 virava o objeto mais pesado da região e competia com o texto que importa. */
+.icone {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  background: var(--acento-wash);
+  color: var(--acento);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconeAtraso {
+  background: var(--erro-wash);
+  color: var(--erro);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.conteudo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+/* Mesmo corpo (13) do texto acima: no v2 "secundário" se diz por COR, não por mais um
+ * passo de tamanho que ninguém enxerga. */
+.quando { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 400; color: var(--tinta-3); }
+.quandoAtraso { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--erro); }
+
+/* O nudge (não há próxima atividade). Mesmo painel do `.bloco`, com a barra em `--linha-forte`
+ * — cinza porque não há estado nenhum a comunicar, só uma sugestão. Barra cinza e barra
+ * colorida lado a lado ensinam a ler a margem.
+ *
+ * ⚠️ O que ele NÃO volta a ser é `--trilho` + borda tracejada: poço tracejado lê como área de
+ * arrastar-e-soltar, e não há nada pra soltar aqui. */
+.nudge {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-left: 2px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-4) var(--s-5);
+}

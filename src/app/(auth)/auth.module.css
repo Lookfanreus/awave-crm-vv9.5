@@ -1,0 +1,314 @@
+/* auth.module.css — a receita das telas FORA do shell. Kit v2.
+ *
+ * Usada por CINCO telas: `/entrar`, `/cadastrar`, `/convite/[token]`, `/sem-workspace` (esta
+ * importa daqui desde 2026-08-05; antes tinha uma cópia byte a byte em
+ * `sem-workspace.module.css`, que foi apagada — quatro cópias do mesmo cartão era o mesmo
+ * defeito que o `.bloco` do `_crm` matou) e `/licenca` (a tela de bloqueio do engine, desde
+ * 2026-08-06; ela só acrescenta o que é dela em `licenca/licenca.module.css`).
+ *
+ * 🔴 Esta lista é raio de impacto, não enfeite: quem edita aqui está contando quantas telas
+ * vai mexer. Ela ficar velha é como uma quinta cópia nasce. A MESMA lista está no design
+ * kit — mudou uma, mude a outra.
+ *
+ * `/diagnostico` mantém módulo próprio: ele não tem formulário, tem uma lista de conferência,
+ * e importa a metade que compartilha por cópia anotada — ver a nota no topo de
+ * `diagnostico.module.css`.
+ *
+ * ⚠️ ESTA TELA DEIXOU DE SER EXCEÇÃO, e o texto anterior dizia o contrário — ele chamava a
+ * caixa daqui de "exceção deliberada à regra de contenção ('quase nada tem caixa')". A regra
+ * foi INVERTIDA no `globals.css`: hoje todo bloco de conteúdo é painel, e o cartão daqui é a
+ * regra sendo obedecida.
+ *
+ * O que continua sendo só desta família é a MOLDURA `--trilho` no fundo. Ela é o inverso do
+ * app logado (lá o chão é `--fundo`) porque aqui não há shell nem conteúdo em volta: um
+ * formulário sozinho numa tela chapada infinita não tem onde ancorar. Sem sidebar e sem
+ * página ao redor, o poço em volta + o cartão no meio SÃO a estrutura da tela. */
+
+/* ⚠️ FLEX-COLUNA, e não o `grid` + `place-items: center` que estava aqui. O motivo é o
+ * SELETOR DE TEMA: ele entra como IRMÃO do cartão nas seis telas, e num grid de linha
+ * implícita dois filhos viram duas faixas de meia altura — o cartão centralizado na de cima e
+ * o seletor na de baixo, com um vão no meio. Em coluna os dois ficam empilhados e o conjunto
+ * centralizado, que é o que a tela sempre pareceu ter. Com um filho só o resultado é
+ * idêntico ao de antes.
+ *
+ * O `min-height` (nunca `height`) é o que mantém o `justify-content: center` inofensivo: se o
+ * conteúdo passar da janela, a caixa CRESCE em vez de centralizar e cortar o topo — ver a
+ * nota do `/cadastrar` logo abaixo. */
+.tela {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  background: var(--trilho);
+  /* o halo é um pseudo absoluto; sem contexto de posicionamento ele escaparia pro <body> */
+  position: relative;
+  /* ⚠️ SEM `overflow: hidden`. O halo é `inset: 0` — ele já não pode vazar da caixa — e
+   * esconder o transbordo aqui viraria armadilha: numa janela baixa o `/cadastrar` com o
+   * campo da chave de primeiro acesso passa dos 100vh, e o cartão sairia cortado e sem
+   * rolagem, num formulário que o comprador PRECISA preencher pra instalar o produto. */
+}
+
+/* 🔴 O HALO. `--trilho` sozinho é a "chapa cinza pesada" que o dono viu na sidebar da Fatia
+ * A e que fez o rail virar escuro com degradê e brilho. Aqui o problema é o mesmo em campo
+ * ainda maior: uma tela INTEIRA de cinza chapado com um retângulo branco no meio. A resposta
+ * é a mesma do rail — uma fonte de luz fora do quadro —, só que discreta: quem olha esta
+ * tela está digitando uma senha, não admirando o fundo.
+ *
+ * O accent entra por `color-mix()` e NÃO por um rgba escrito à mão (que é o que o
+ * `Rail.module.css` faz, com uma nota reconhecendo a dívida): `var()` não resolve dentro de
+ * `rgba()`, mas resolve dentro de `color-mix()`. Assim o halo acompanha um rebranding do
+ * `--acento` sozinho, sem uma segunda cópia do hex pra alguém esquecer de atualizar. */
+.tela::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    130% 85% at 50% -25%,
+    color-mix(in srgb, var(--acento) 15%, transparent),
+    transparent 72%
+  );
+}
+
+/* O cartão sobe pra cima do halo (`.tela::before` é posicionado; um irmão estático ficaria
+ * embaixo). */
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  padding: var(--s-7);
+}
+
+/* Variante larga, usada pelo `/diagnostico`. Ele não é um formulário de três campos: é uma
+ * lista de conferência em que cada item carrega uma instrução de "como resolver" que o
+ * comprador leigo vai LER, e a 400px essas frases viravam colunas de cinco linhas. */
+.cardLargo {
+  composes: card;
+  max-width: 620px;
+}
+
+/* ── Lockup de marca ─────────────────────────────────────────────────────────────────
+ *
+ * 700 aqui é lockup (categoria à parte na barreira de escala), não o 600 que a escala baniu
+ * do texto pequeno. Não baixe. */
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-bottom: var(--s-6);
+}
+
+/* 🔴 Degradê + GLIFO, não um quadrado azul chapado com a letra "A".
+ *
+ * A assinatura da marca já existe e está no rail: o mesmo degradê de 145° com o `LayoutGrid`
+ * dentro. Estas telas usavam outra coisa — chapado, com uma inicial —, e o resultado era que
+ * a primeira tela que o comprador vê no produto tem uma logo que a segunda tela contradiz.
+ *
+ * A ponta roxa é `--marca-fim` (o `#6E4BFF` do protótipo aprovado). Ela era hex à mão aqui e
+ * no `Rail.module.css`, com um comentário em cada explicando que NÃO viraria token "porque
+ * não é papel de interface, é a assinatura". O receio era certo — ninguém deve usar esse
+ * roxo como cor de UI —, mas o remédio estava errado: dois hexes iguais em dois arquivos não
+ * impedem um terceiro, só garantem que a marca vai mudar em um e ficar no outro. O convite
+ * agora se fecha por escrito, na nota do token no `globals.css`.
+ *
+ * O glifo é `--tinta-invertida`, e ele lê no degradê inteiro NOS DOIS TEMAS — o piso de um
+ * ícone é 3 (WCAG 1.4.11, objeto gráfico). Medido: no CLARO 5,13:1 na ponta accent e 5,11:1 na
+ * roxa; no ESCURO 5,56:1 e 3,84:1, porque ali a tinta é escura e a ponta roxa é fixa.
+ *
+ * ⚠️ NÃO troque por branco fixo "como o avatar". O avatar tem um chão inteiramente derivado,
+ * com garantia própria contra branco, e escreve TEXTO (piso 4,5). Aqui metade do chão é
+ * `--acento`, que segue o tema, e o branco pioraria o pior ponto do escuro: 3,53 contra os
+ * 3,84 de hoje. Ver a nota do `--marca-fim` no `globals.css`. */
+.tile {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--r-pequeno);
+  background: linear-gradient(145deg, var(--acento), var(--marca-fim));
+  color: var(--tinta-invertida);
+  display: grid;
+  place-items: center;
+}
+
+/* O logo do comprador no lugar do tile. 48px e não 40 (o tamanho do tile) pela mesma razão
+ * do rail: o tile é um glifo desenhado pra caber apertado, um logo de verdade traz margem
+ * interna própria e precisa de mais caixa pra ler com o mesmo peso.
+ *
+ * `contain` porque logo de comprador vem em qualquer proporção; e sem fundo, porque o
+ * degradê é a NOSSA assinatura — emoldurar a marca dele com a nossa é o oposto do pedido. */
+.logo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: var(--r-pequeno);
+}
+
+.marca b {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+/* ── Cabeçalho do cartão ─────────────────────────────────────────────────────────────
+ *
+ * 500, não 600: a escada óptica do kit manda o peso CAIR conforme o tamanho sobe, e 21px
+ * já tem presença por área. O 600 que estava aqui é herança do kit v1, onde o `h1` media
+ * 24px e o kit mandava 600 de 30 até 14 — o mesmo peso pra tudo. */
+.titulo {
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  letter-spacing: var(--ls-page);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.sub {
+  margin-top: var(--s-2);
+  color: var(--tinta-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+/* Usado só pelo `/diagnostico`, que destaca no subtítulo os nomes das abas do EasyPanel
+ * ("Environment", "Deploy") — o comprador vai procurá-las na tela dele. Mora aqui porque
+ * `.sub` é definido aqui: um `.sub b` escrito no módulo do diagnóstico geraria OUTRO `.sub`
+ * hasheado e nunca casaria. O peso vem do reset global (`b { font-weight: 600 }`). */
+.sub b {
+  color: var(--tinta);
+}
+
+/* ── Formulário ──────────────────────────────────────────────────────────────────── */
+
+.form {
+  margin-top: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* `.campo`, `.rotulo`, `.input` e `.ajuda` saíram daqui: viraram `Campo`/`Entrada`
+ * (`src/components/ui/Campo.tsx`). O comentário que morava no `.input` dizia "mesma receita
+ * de `.input` no resto do produto, ver config.module.css/crm.module.css" — três cópias
+ * apontando umas pras outras é exatamente o sintoma que o componente resolve. */
+
+/* Campo de senha: o botão de mostrar/ocultar fica DENTRO da moldura do input (`CampoSenha.tsx`).
+ * O invólucro é `relative` só pra ancorar o botão — ele não é caixa, não tem borda nem fundo;
+ * a moldura continua sendo a do próprio `.input`. */
+.campoSenha {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Reserva o lugar do botão. Sem isto a senha corre POR BAIXO do olho — e some justamente
+ * quando o usuário clicou pra vê-la. 48px = o alvo de 32px do botão + respiro. */
+.inputSenha {
+  padding-right: var(--s-8);
+}
+
+/* Só POSICIONAMENTO. O visual do olho (fundo, tinta, hover, anel) é o `Botao` variante
+ * fantasma só-ícone — o quadrado de `--h-control` que ele já desenha é exatamente a medida que
+ * estava escrita à mão aqui. */
+.olho {
+  position: absolute;
+  right: var(--s-2);
+}
+
+/* O respiro depois do último campo, e a altura maior da única ação da tela.
+ *
+ * O padding-block maior é deliberado e é o motivo de esta classe existir em vez de o botão
+ * usar o tamanho `medio` puro: é a única ação da tela e ela ocupa a linha inteira, então ela
+ * pode (e deve) ser mais alta que um botão de barra de ferramentas. */
+/* 🔴 SÓ margem. O `padding-block: var(--s-4)` que morava aqui era sobra da época em que cada
+ * tela desenhava o próprio botão: ele SOMAVA sobre o `min-height: var(--h-control)` do
+ * `Botao` e levava o envio a 44,8px — o único primário do produto com altura própria, e por
+ * acidente, não por decisão. Um módulo não redesenha controle (é a regra que a barreira
+ * `vocabulario-de-controle` guarda; ela não pegou este porque o seletor é uma classe, não
+ * `.form button`). Se um dia o envio das telas de entrada precisar mesmo ser mais alto que o
+ * resto, quem cresce é o `Botao`, com um tamanho nomeado — não este arquivo. */
+.enviar {
+  margin-top: var(--s-3);
+}
+
+/* Ação única de uma tela SEM formulário (o `/convite` inválido). Existe pra não reusar o
+ * `.form` num lugar onde não há form — e pro botão não herdar só o `margin-top: var(--s-3)`,
+ * que é o respiro de "depois do último campo", não o de "depois do texto". */
+.acao {
+  margin-top: var(--s-4);
+}
+
+/* ── Mensagens ───────────────────────────────────────────────────────────────────────
+ *
+ * 🔴 O `margin-top` não é cosmético: as duas moram ENTRE `.sub` e `.form`, e o `.form` é
+ * quem carregava o respiro (`margin-top: var(--s-6)`). Sem margem própria, a mensagem de
+ * erro nascia colada no subtítulo — visível só no estado de erro, que é justamente o que
+ * ninguém abre pra conferir. Estava certo no `sem-workspace.module.css` e errado aqui,
+ * enquanto os dois eram cópias.
+ *
+ * A barra de 2px na borda: mesma gramática do `.orfao`/`.aviso` do `/diagnostico` e da
+ * `ProximaAtividade` do negócio — o wash sozinho, sobre branco, é uma mancha clara sem
+ * começo nem fim (o `--erro-wash` dá 1,05:1 contra a página). Quem marca a mensagem é a
+ * barra saturada; o wash só a acomoda. */
+.erro,
+.aviso {
+  margin-top: var(--s-5);
+  border-radius: var(--r-controle);
+  padding: var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+}
+
+.erro {
+  border-left: 2px solid var(--erro);
+  background: var(--erro-wash);
+  color: var(--erro);
+}
+
+.aviso {
+  border-left: 2px solid var(--aviso);
+  background: var(--aviso-wash);
+  color: var(--aviso);
+}
+
+/* ── Rodapé do cartão ────────────────────────────────────────────────────────────────
+ *
+ * O filete separa "o que eu vim fazer aqui" de "eu vim no lugar errado". Sem ele o link de
+ * troca de tela flutuava a 24px do botão como se fosse uma segunda ação do formulário. */
+.rodape {
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha);
+  text-align: center;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.link {
+  color: var(--acento);
+  font-weight: 500;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+.link:hover {
+  color: var(--acento-hover);
+  text-decoration: underline;
+}
+
+/* Só o `.link` sobrou aqui: o anel do botão e o do campo agora saem dos componentes, e um anel
+ * declarado em dois lugares é uma chance de os dois divergirem. */
+.link:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

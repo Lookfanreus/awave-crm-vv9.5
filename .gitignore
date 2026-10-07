@@ -1,0 +1,53 @@
+# dependências
+node_modules/
+.pnp
+.pnp.js
+
+# next.js / build
+.next/
+out/
+dist/
+build/
+
+# env / segredos (config vai pro Vault, nunca aqui)
+.env*
+!.env.example
+
+# pasta de trabalho de assistentes de codigo — nao faz parte do produto
+# auditoria:ok caminho-nao-entregue — a regra so existe pra manter fora do git uma pasta que nem chega a nascer aqui.
+.agents/
+
+# chaves privadas nunca entram no repositorio
+*.pem
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# supabase local
+.branches
+.temp
+supabase/.temp
+
+# testes / cobertura
+coverage/
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.turbo
+
+# Artefatos do Playwright MCP (snapshots/console de smokes)
+.playwright-mcp/
+
+# Saidas de execucao de teste de navegador. Sem caminho de pasta aqui de proposito: este arquivo
+# E ENTREGUE, e o `audit:entrega` recusa referencia a caminho que o comprador nao tem — regra que
+# ja pegou estas mesmas linhas quando elas nomeavam a pasta. (`node_modules/` la em cima ja vale
+# em qualquer profundidade.)
+test-results/
+playwright-report/
+fotos/

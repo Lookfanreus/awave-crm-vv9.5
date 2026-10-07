@@ -1,0 +1,68 @@
+/* Drawer.module.css — slide-over shell (kit v2).
+ *
+ * 🔴 É um dos QUATRO módulos que mantêm `box-shadow` (ver a barreira de sombra do kit):
+ * ele flutua de verdade sobre o conteúdo. O card, não — lá a separação é por borda. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  /* 🔴 `--veu`, o token do scrim — e o erro que ele impede de voltar: aqui estava
+   * `rgba(13, 20, 32, .32)`, LITERAL e portanto idêntico nos dois temas. No claro funcionava
+   * (delta 2,07). No escuro não escurecia nada: 1,02 sobre `--fundo`, 1,01 sobre
+   * `--superficie` — e sobre a superfície ele CLAREAVA, porque aquele azul-ardósia é mais
+   * claro que qualquer superfície do tema escuro. A gaveta abria sem separação do que estava
+   * atrás. Véu é o caso mais fácil de errar: ele não tem texto em cima, então nada acusa. */
+  background: var(--veu);
+  z-index: 200;
+  /* Fade-in com `--suave`: o scrim não deve chamar atenção pra si — ele é o que apaga a
+   * página, não o que chega. Quem chega (com `--mola`) é o painel. */
+  animation: fadeIn var(--t-medio) var(--suave);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: 90vw;
+  height: 100%;
+  background: var(--superficie);
+  box-shadow: var(--elev-2);
+  display: flex;
+  flex-direction: column;
+  z-index: 201;
+  animation: slideIn var(--t-medio) var(--mola);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border-bottom: 1px solid var(--linha);
+  flex-shrink: 0;
+}
+
+.titulo {
+  font-size: var(--fs-title);
+  font-weight: 500;
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  color: var(--tinta);
+}
+.corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-6);
+}

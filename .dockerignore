@@ -1,0 +1,16 @@
+node_modules
+# A linha acima casa SO a pasta da raiz — os padroes do .dockerignore sao ancorados no
+# contexto, sem `**` implicito. A zona do comprador precisa da sua propria linha: sem ela, um
+# `custom/node_modules` instalado na maquina DELE (Windows, macOS) viajaria pro contexto e
+# entraria numa imagem Linux, com binario nativo do sistema errado. O `npm install --prefix
+# custom` do Dockerfile instala sempre do zero, dentro do container.
+custom/node_modules
+.next
+dist
+.git
+tests
+docs
+*.tsbuildinfo
+# .env* NUNCA entra na imagem: o `next build` os carrega e as NEXT_PUBLIC_* viram
+# literais no bundle — as credenciais da maquina de quem buildou iriam pro comprador.
+.env*

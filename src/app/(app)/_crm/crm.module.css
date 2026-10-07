@@ -1,0 +1,1142 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+
+/* crm.module.css — o vocabulário COMPARTILHADO das listas e dos detalhes. É o módulo mais
+ * pesado do produto: veste 18 componentes de `_crm/` (Tabela e Timeline inclusive) e
+ * alcança 6 telas de uma vez — contatos, empresas, as três de detalhe e, pelo
+ * `AcoesAgenda`, encosta na agenda.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 AS CAIXAS VOLTARAM, E NÃO SÃO AS QUE MORRERAM AQUI. A distinção é o assunto deste
+ * cabeçalho, porque a versão anterior dele mandava o contrário e foi obedecida.
+ *
+ * O que morreu, e continua morto: sete regras que desenhavam bloco de conteúdo como CARD de
+ * admin panel — retângulo branco de borda dura e raio pequeno, empilhado sobre uma página
+ * branca, um por seção. A queixa era da SILHUETA, e trocar os hex dentro dela não resolvia.
+ *
+ * O que a resposta da época fez foi tirar a caixa de TODO MUNDO, e aí o produto ficou sem
+ * desenho nenhum: `transparent`, `border: 0`, `radius: 0`, `shadow: none` em tudo, com
+ * rótulo e filete de 1px no lugar. A regra foi invertida no `globals.css` — bloco de conteúdo
+ * é PAINEL, com os quatro tokens juntos (`--superficie` · `--linha` · `--r-painel` ·
+ * `--elev-1`) —, e o painel não é o card velho: ele LEVANTA (raio 14, borda macia, sombra de
+ * repouso) em vez de DELIMITAR (raio 6, borda dura, chapado).
+ *
+ * O que entrou junto com a caixa continua valendo, e é o que estrutura a página:
+ *
+ *   1. A FAIXA DE IDENTIDADE (`.faixa`) no topo de todo detalhe, com a mesma anatomia da
+ *      faixa de KPI do painel: rótulo micro em caixa alta e valor, hoje em células com caixa
+ *      própria em vez de filetes divisores. Ela responde "o que é este registro" antes de
+ *      qualquer rolagem.
+ *   2. A GRADE 8+4 (`.detalheGrade`). Antes o detalhe era UMA coluna de 1150px, e a
+ *      timeline escrevia "Movido para Novo lead" numa linha de 1150px — 200px de texto e
+ *      950px de branco por item. 8+4 é um dos cinco cortes que a grade de 12 permite, põe
+ *      o que ACONTECE à esquerda e o que COMPLEMENTA à direita, e devolve à leitura uma
+ *      medida de linha.
+ *      🔴 Lateral vazia É problema, e este comentário afirmava o contrário. A aposta era
+ *      que, sem moldura, um terço direito sem conteúdo leria como margem; medido no
+ *      navegador, o que se lê é tela quebrada — 372px de largura por ZERO de altura, e não
+ *      num caso raro: é como TODA instalação nova nasce, porque campo customizado começa
+ *      vazio. Por isso existe o `.detalheGradeUnica` mais abaixo — e com painel ele ficou
+ *      MAIS necessário, porque a lateral vazia deixaria uma caixa vazia na tela em vez de um
+ *      vão. Quando o modificador entra, a coluna simplesmente não existe e a página fecha
+ *      inteira: não sobra vão nem moldura pra alguém ter que explicar.
+ *   3. O BLOCO (`.bloco` + `.blocoCab`), hoje painel com título 13/600 `--tinta`. Uma receita
+ *      só, idêntica AO PIXEL à do `ListCard`/`ChartCard` — os três aparecem na mesma tela e é
+ *      o alinhamento deles que faz tudo ler como um sistema. Ela substitui `.timelineTitulo`,
+ *      `.relTitulo`, `.camposTitulo` e `.composerTitulo`, que eram quatro cópias byte a byte
+ *      do mesmo 16/500.
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ *
+ * 🔴 CAMPO DE FORMULÁRIO É `--superficie` + borda `--linha-forte` — nunca `--trilho`. Campo
+ * pintado de poço lê como DESABILITADO nos dois temas; quem contém o campo é a borda.
+ *
+ * 🔴 FOCO É UM ANEL SÓ, no fim do arquivo: `outline: 2px solid var(--acento)` + 2px de
+ * offset, que desenha FORA da caixa e não depende do fundo.
+ *
+ * ⚠️ SOMBRA: `--elev-1` é o repouso de todo painel deste arquivo e `--elev-2` fica reservado
+ * ao que flutua DE VERDADE (o dropdown `.seletorMenu`). Não misture os dois — `--elev-2` num
+ * bloco parado faz ele parecer que descolou da página. */
+
+/* ── Controles: a altura é UMA (`--h-control`) ──────────────────────────────────────────
+ *
+ * Antes cada botão fechava a própria altura por padding (`--s-3` em cima e embaixo sobre
+ * 13/1,45 = 35px + borda = 37), e o resultado era uma linha de controles com três alturas
+ * quase iguais — o tipo de desalinhamento que ninguém sabe nomear mas todo mundo lê como
+ * "malfeito". Agora o padding vertical é `--s-2` e quem fecha a altura é
+ * `min-height: var(--h-control)`, então botão, input, select e gatilho de dropdown têm
+ * EXATAMENTE 32px e assentam na mesma linha. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* ⚠️ `.campo` e `.rotulo` FICAM, e só por um leitor: o `CampoEntrada` dos campos
+ * customizados. Ele não usa o `Campo` porque o rótulo dele precisa de um `id` próprio — a
+ * seleção múltipla virou um `role="group"` de chips, e grupo só ganha nome acessível por
+ * `aria-labelledby`, que exige um id no rótulo. Expor isso como prop do `Campo` seria uma
+ * prop com UM leitor no produto inteiro.
+ *
+ * Os CONTROLES dele já são `Entrada`/`Selecao`/`AreaTexto`; o que sobrou aqui é o invólucro. */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.rotulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-2);
+}
+
+/* 🐛 CLASSE QUE NÃO EXISTIA. O `FormNegocio.tsx` referencia `estilos.ajudaCampo` desde o
+ * commit `e6be695` (a previsão de fechamento) e ela nunca foi escrita aqui — CSS Modules
+ * devolve `undefined`, o React não renderiza atributo nenhum e a dica saía com a MESMA cor
+ * e o MESMO peso do valor digitado logo acima, como se fosse conteúdo do campo. Falha
+ * silenciosa clássica: nada quebra, nada avisa, e nenhuma barreira do kit lê `.tsx`. */
+.ajudaCampo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* `.input`, `.select` e `.textarea` saíram: viraram `Entrada`/`Selecao`/`AreaTexto`. A regra
+ * daqui era a receita canônica do produto — e existia copiada, com paddings diferentes, em
+ * mais nove módulos. */
+
+/* Só o respiro depois do último campo. O resto do botão de salvar é o `Botao` primário de
+ * largura total. */
+.salvar {
+  margin-top: var(--s-3);
+}
+
+/* Mensagem de erro. Continua com fundo, e isso NÃO contradiz a regra de contenção: wash
+ * semântico não é moldura de bloco, é a própria mensagem — a cor É o conteúdo. O raio é
+ * `--r-controle` porque ela nasce colada num controle. */
+.erro {
+  background: var(--erro-wash);
+  color: var(--erro);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+}
+
+/* O erro que nasce colado no controle que falhou (dropdown de etapa, ganhar/perder).
+ * Era `style={{ marginTop: 6 }}` em três `.tsx` — 6px não existe na escala de 4px e, por
+ * ser inline, nenhuma barreira de CSS o enxergava. */
+.erroInline { margin-top: var(--s-2); }
+
+/* ══ A moldura do detalhe ═══════════════════════════════════════════════════════════ */
+
+/* O link "voltar", no slot `acima` do `CabecalhoPagina`.
+ *
+ * 🔴 As três telas de detalhe não tinham NENHUM caminho de volta — quem entrava por um
+ * cartão do kanban só saía pelo rail, que leva ao board do funil padrão e não à lista de
+ * onde a pessoa veio. É a lacuna que o `acima` do componente existe pra fechar. */
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  text-decoration: none;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+.voltar:hover { color: var(--tinta); }
+
+.voltar:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-radius: var(--r-pequeno);
+}
+
+/* ── A faixa de identidade ────────────────────────────────────────────────────────────
+ *
+ * Mesma anatomia da faixa de KPI do painel: rótulo micro, valor, filete vertical
+ * entre colunas (nunca antes da primeira) e um filete horizontal fechando embaixo.
+ *
+ * 🔴 `grid-auto-flow: column` + `grid-auto-columns` em vez de `grid-template-columns`, e o
+ * motivo é de DESENHO, não de driblar a barreira de grade: o número de células muda por
+ * tela (3 no negócio, 4 no contato e na empresa) e um template fixo obrigaria uma classe
+ * por contagem. Com 2, 3 ou 4 filhos o resultado é `6+6`, `4+4+4` e `3+3+3+3` — os três
+ * cortes que a grade de 12 permite. Esta faixa NÃO deve ser usada com 5 ou mais células: aí
+ * ela sai da grade de 12 e a promessa acima deixa de valer. */
+.faixa {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+}
+
+/* ⚠️ Os filetes divisores entre células saíram daqui pelo mesmo motivo que saíram da
+ * `.faixaKpi` do painel: cada célula virou painel, e o que separava por linha agora separa
+ * por borda. Filete entre duas bordas é uma terceira linha na mesma calha. */
+
+.faixaCelula {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-5);
+}
+
+.faixaRotulo {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-micro);
+  color: var(--tinta-3);
+}
+
+/* 16/500 (`title`), não 30 (`metric`): `metric` é o valor de KPI do painel, e um e-mail em
+ * 30px viraria a manchete de uma tela que é sobre outra coisa. Tabular porque metade
+ * destas células é dinheiro, data ou telefone — dado que se compara em coluna. */
+.faixaValor {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  font-weight: 500;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.faixaValor a {
+  color: var(--acento);
+  text-decoration: none;
+}
+
+.faixaValor a:hover { text-decoration: underline; }
+
+/* Célula sem dado. `--tinta-3` e não um cinza mais claro: "—" é informação (o campo está
+ * vazio), e informação não vive abaixo de 4,5:1. */
+.faixaVazio { color: var(--tinta-3); }
+
+/* Numa faixa de ~340px úteis, quatro células viram quatro colunas de 85px e o e-mail
+ * vira reticências. Empilha — e o filete vira horizontal, porque a faixa continua sendo
+ * uma faixa. */
+@media (max-width: 640px) {
+  .faixa {
+    grid-auto-flow: row;
+  }
+
+  .faixa > * + * {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--linha);
+    padding-top: var(--s-4);
+    margin-top: var(--s-4);
+  }
+}
+
+/* ── A grade 8+4 ──────────────────────────────────────────────────────────────────────
+ *
+ * `align-items: start` porque as duas colunas variam muito de altura: um negócio com nove
+ * atividades ao lado de uma lateral de três linhas esticaria a lateral inteira até embaixo
+ * com o `stretch` padrão. */
+.detalheGrade {
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* Quando a página não tem nada pra pôr na lateral, a grade colapsa para o corte de coluna
+ * cheia e o `<aside>` não é renderizado. Não é caso de borda: workspace nasce SEM campo
+ * customizado nenhum, então fora da caixa as três telas de detalhe reservavam um terço da
+ * largura pra um elemento de altura zero — um terço vazio não lê como margem generosa, lê
+ * como tela quebrada. Com painel piorou: sem o modificador, a lateral vazia seria uma CAIXA
+ * vazia de 372px por zero de altura, que é ainda mais difícil de ler como "não há nada aqui".
+ *
+ * A decisão é do servidor (é lá que a lista de definições existe), nunca de `:empty` ou
+ * `:has()`: o `<aside>` não fica vazio de forma confiável — ele hospeda um componente que
+ * retorna `null`, o que é diferente de não ter filho.
+ *
+ * O modificador é ANINHADO na base de propósito. Solto, ele só carrega uma declaração de
+ * grade, então esquecer a base não deixaria de pintar — pintaria uma coluna cheia sem o gap
+ * nem o `align-items` do conjunto. Aninhado, o descuido não tem efeito nenhum. */
+.detalheGrade.detalheGradeUnica {
+  grid-template-columns: 12fr;
+}
+
+/* ⚠️ `--s-4` (12) e não os `--s-7` (32) de antes: os 32 eram o espaço fazendo o trabalho que
+ * a borda da caixa não fazia. Com painéis, o vão é o do protótipo. `min-width: 0` porque a
+ * trilha é `8fr` (= `minmax(auto, 8fr)`) e esse `auto` deixaria o min-content de uma
+ * atividade longa virar piso de largura. */
+.detalhePrincipal,
+.detalheLateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .detalheGrade {
+    grid-template-columns: 12fr;
+  }
+}
+
+/* ── A linha de controles do negócio ─────────────────────────────────────────────────
+ *
+ * Funil e etapa à esquerda (onde o negócio ESTÁ), ganhar/perder à direita (para onde ele
+ * VAI). A caixa fecha a região de comando e a separa do histórico — era um filete embaixo,
+ * que sozinho não dizia onde a região COMEÇAVA. */
+.faixaControles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-4) var(--s-5);
+}
+
+.controlesEsq,
+.controlesDir {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+/* ── O bloco: a receita única que substituiu as quatro caixas ─────────────────────────
+ *
+ * Idêntica ao `ListCard.module.css` e ao `ChartCard.module.css`. Se mexer no padding do
+ * `.blocoCab`, mexa nos dois de lá junto: os três aparecem na mesma tela, e cabeçalhos em `y`
+ * diferentes anunciam seções que começam em alturas diferentes. */
+.bloco {
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  /* O corpo. O `.blocoCab` traz o respiro de cima, então aqui só laterais e pé. */
+  padding: 0 var(--s-5) var(--s-5);
+}
+
+/* O recuo lateral negativo devolve o cabeçalho à borda do painel — o `padding` do `.bloco`
+ * serve ao corpo, e um cabeçalho recuado mais que ele criaria uma segunda coluna de
+ * alinhamento dentro de uma caixa que só deveria ter uma. */
+.blocoCab {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-inline: calc(var(--s-5) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+/* 13/600 `--tinta`. Ele já foi 13/500 `--tinta-2`, apagado de propósito pra não roubar do
+ * filete o papel de marcar o começo da seção; com a caixa marcando, ele volta a ser o nome do
+ * painel. Ver a nota gêmea no `ListCard.module.css`. */
+.blocoTitulo {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-body);
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+/* O número à direita do título — mesma receita do `.meta` do ListCard. `margin-left: auto`
+ * e não uma coluna de grade: ele é opcional, e sem ele o cabeçalho não pode ficar com um
+ * vão reservado. */
+.blocoMeta {
+  margin-left: auto;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Corpo do bloco: o respiro entre o cabeçalho e o conteúdo. `--s-4` (12) e não `--s-5` (16):
+ * o `.blocoCab` já traz 8px de `padding-bottom` próprios, e 8 + 12 = a folga do protótipo
+ * entre o título do painel e a primeira linha. O `ChartCard` faz a mesma soma. */
+.blocoCorpo {
+  margin-top: var(--s-4);
+}
+
+.notasTexto {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Título + valor do negócio ────────────────────────────────────────────────────────
+ * O valor mora na faixa, não ao lado do título. `.detalheSub` é o que vai no `subtitulo`
+ * do `CabecalhoPagina`: pílula de status e, quando perdido, o motivo. */
+.detalheSub {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+/* Quem responde por um negócio FECHADO. Só aparece nesse caso — com o negócio aberto quem
+ * mostra (e troca) é o seletor da linha de comando, e repetir o nome a 40px dele é ruído.
+ *
+ * Fica no subtítulo porque a faixa de identidade logo abaixo tem um teto de 4 células escrito
+ * (ver a nota dela), e o negócio já usa as quatro. Sem este lugar, "quem fechou este negócio"
+ * seria um dado que o servidor tem e a tela não mostra em canto nenhum. */
+.subResponsavel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* ── SeletorEtapa / SeletorFunil ──────────────────────────────────────────────────── */
+.seletorWrap { position: relative; }
+/* 🔴 A ÚNICA sombra do arquivo. Dropdown flutua sobre o conteúdo, e é a categoria que
+ * a barreira de sombra abre exceção — por isso `var(--elev-2)` e nunca um rgba() solto. */
+.seletorMenu {
+  position: absolute;
+  top: calc(100% + var(--s-2));
+  left: 0;
+  min-width: 200px;
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-2);
+  padding: var(--s-2);
+  z-index: 40;
+}
+
+.seletorItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  padding: var(--s-3);
+  border: 0;
+  background: transparent;
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+/* `--superficie-hover` e não `--trilho-hover`: este hover acontece sobre o BRANCO do menu. */
+.seletorItem:hover { background: var(--superficie-hover); }
+.seletorItemAtivo  { font-weight: 500; color: var(--acento); }
+
+/* Avatar + nome no item do seletor de responsável. O avatar aqui é REDUNDANTE (o nome está
+ * do lado) e por isso segue `aria-hidden` — ele existe para o olho: numa lista de gente, a
+ * cor do disco é o que se reconhece antes do texto, e é a mesma cor que a pessoa tem no
+ * cartão do quadro (ela é derivada do nome, não guardada). É esse par que faz "achar o meu"
+ * numa raia ser um gesto e não uma leitura. */
+.seletorPessoa {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+/* ── Ganhar / Perder ──────────────────────────────────────────────────────────────────
+ *
+ * Os dois eram botões PREENCHIDOS de wash com borda da própria cor — verde forte e
+ * vermelho forte lado a lado, competindo entre si e com o botão primário da tela. Agora
+ * são secundários (fundo `--superficie` + borda `--linha-forte`) que só assumem a cor no texto e
+ * no hover: é o mesmo tratamento que o `.btnConcluir` do `acoesAgenda.module.css` já usava
+ * na agenda, então o produto passa a ter UM jeito de desenhar "ação com consequência
+ * semântica" em vez de dois. */
+.ganharPerderWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.btnGanhar,
+
+.btnGanhar:disabled,
+.btnPerder:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.motivo {
+  /* Só o comportamento na linha; a caixa é do `Entrada`. */
+  flex: 1;
+  min-width: 0;
+}
+
+.motivoWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.motivoRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* ── Botões secundário e primário ────────────────────────────────────────────────── */
+
+/* ── Timeline ─────────────────────────────────────────────────────────────────────────
+ *
+ * 🔴 O TRILHO É O QUE SUBSTITUI A CAIXA. Uma timeline sem linha ligando os pontos é uma
+ * lista com ícones; o que faz o olho ler "isto é uma sequência no tempo" é a continuidade
+ * vertical. Ela entrou junto com a saída dos divisores por item: linha de conexão MAIS
+ * filete por linha são dois sistemas de separação disputando a mesma leitura — com o
+ * trilho, o que separa um item do outro é o espaço, e o que os liga é a linha.
+ *
+ * O trilho para no penúltimo item (`:last-child` não desenha), senão ele desceria além do
+ * último ponto e apontaria pra um futuro que não existe na lista. */
+.timelineLista {
+  list-style: none;
+}
+
+.timelineItem {
+  position: relative;
+  display: flex;
+  gap: var(--s-4);
+  padding-bottom: var(--s-5);
+}
+
+.timelineItem:last-child { padding-bottom: 0; }
+
+/* O trilho começa abaixo do disco (24px) e vai até o fim do item. `left: 11px` centra a
+ * linha de 2px no eixo do disco de 24 — 11..13, centro em 12, que é o centro do tile. */
+.timelineItem:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: calc(24px + var(--s-2));
+  bottom: 0;
+  width: 2px;
+  background: var(--linha);
+}
+
+/* Disco de 24px (não 32): a timeline é um LOG, e um disco de 32 com ícone de 15 dentro dá
+ * a ela cara de conversa de chat. 24 é a mesma família do `Avatar` `sm` do rail. */
+.timelineIcone {
+  position: relative;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  background: var(--trilho);
+  color: var(--tinta-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🔴 `composes` porque o `Timeline.tsx` escolhe UMA das três classes — nunca a base MAIS a
+ * variante. Sem isto as duas variantes nunca receberiam o 24×24 nem o raio: seriam uma
+ * mancha de fundo atrás do svg. O bug é do v1 e foi medido no browser. */
+
+/* Origem IA: o ÚNICO disco colorido da timeline.
+ *
+ * ⚠️ Aqui morreu um roxo solto (`#F0EBFF`/`#7C5CFF`, herdado do `--chart-4` do v1). O kit
+ * v2 não tem token de "origem IA" e inventar um hex no meio de um módulo é exatamente o
+ * que a regra "só tokens" impede. Em vez de perder o sinal, ele foi REALOCADO: o accent
+ * passa a ser reservado à atividade que a IA escreveu, e a atividade da equipe desce pro
+ * cinza da moldura. Vira hierarquia de ORIGEM com três níveis, toda em token — e a
+ * diferença fica mais legível do que o par azul/roxo, que ninguém separava de relance. */
+.timelineIconeIa {
+  composes: timelineIcone;
+  background: var(--acento-wash);
+  color: var(--acento);
+}
+
+/* Evento de sistema (mudança de etapa): o mais quieto dos três. `--icone-mudo` é legítimo
+ * aqui porque o rótulo está escrito ao lado, na mesma linha — a única condição em que o
+ * token é permitido. */
+.timelineIconeEtapa {
+  composes: timelineIcone;
+  color: var(--icone-mudo);
+}
+
+.timelineCorpo { flex: 1; min-width: 0; padding-top: var(--s-1); }
+
+.timelineConteudo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  word-break: break-word;
+}
+
+/* `body` e não `micro`: 11px só existe em caixa alta com tracking, e "Equipe · há
+ * 1 h" não é rótulo. O que o torna secundário é a COR. */
+.timelineCaption {
+  display: block;
+  margin-top: var(--s-1);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.timelineAgendada { color: var(--acento); font-weight: 500; }
+.timelineAtraso { color: var(--erro); font-weight: 500; }
+.timelineAcoes { margin-top: var(--s-3); }
+
+/* ── ComporAtividade ───────────────────────────────────────────────────────────────── */
+
+.composerCorpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.composerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.composerData {
+  /* Só a largura. `datetime-local` tem largura intrínseca própria (o widget do browser) e
+     ignora o flex-shrink sem isto — sobrava pra fora da tela no celular. A caixa é do
+     `Entrada`. */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.composerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.composerDica {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* ── Relacionados ─────────────────────────────────────────────────────────────────────
+ *
+ * A linha ganhou a mesma anatomia da do `ListCard`: alvo de clique de largura cheia com
+ * sangria negativa (a faixa de hover ultrapassa a margem do bloco em 8px de cada lado, em
+ * vez de ser um retângulo solto no meio do branco) e seta que só aparece no hover, sem
+ * reflow porque ela ocupa o espaço o tempo todo. */
+/* 2px entre linhas, como o `.lista` do `ListCard`: sem ela dois realces de hover vizinhos se
+ * encostam e a pilha volta a parecer tabela. O recuo lateral de 8px é o que mantém o realce
+ * dentro do painel, com folga da borda. */
+.relLista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin-inline: calc(var(--s-3) * -1);
+}
+
+/* ⚠️ O divisor e a sangria negativa saíram quando o `.bloco` ganhou caixa: dentro do painel a
+ * lista é pilha, e a faixa de hover tem que ficar RECUADA da borda — sangrando, ela encostava
+ * nela. É a mesma virada do `ListCard.module.css`. */
+.relLinha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--h-row);
+  padding: var(--s-3);
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-controle);
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.relLinha:hover { background: var(--superficie-hover); }
+
+.relPrincipal {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 🔴 Coluna de LARGURA MÍNIMA fixa e alinhada à direita, não só empurrada pela margem.
+ * Empurrado, cada valor termina num x diferente — "R$ 52.000,00" e "R$ 9.000,00" não
+ * formam coluna, e uma lista de dinheiro sem borda direita alinhada é a diferença entre
+ * ler e reler. Mesma regra do `.trailing` do `ListCard`. */
+.relSecundario {
+  flex-shrink: 0;
+  min-width: 108px;
+  text-align: right;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.relBadge { flex-shrink: 0; display: inline-flex; }
+
+.relSeta {
+  flex-shrink: 0;
+  color: var(--icone-mudo);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--t-rapido) var(--suave), transform var(--t-rapido) var(--mola);
+}
+
+.relLinha:hover .relSeta,
+.relLinha:focus-visible .relSeta {
+  opacity: 1;
+  transform: none;
+}
+
+/* Alinhado à ESQUERDA, com o mesmo recuo das linhas — igual ao `.vazio` do `ListCard`.
+ * Centralizado, ele estava centralizado em relação a uma caixa que não existe mais, e
+ * texto centralizado no meio do nada lê como legenda solta. */
+.relVazio {
+  padding: var(--s-4) 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* ── Página de lista ──────────────────────────────────────────────────────────────── */
+
+.listaLayout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.listaAcoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.buscaForm { display: flex; align-items: center; }
+
+/* A lupa dentro do campo. Ela não é enfeite: sem ela o campo de busca é um retângulo vazio
+ * idêntico a qualquer input de formulário, e o placeholder some assim que a pessoa digita
+ * — a partir daí nada na tela diz que aquele texto é um filtro. */
+.buscaWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.buscaIcone {
+  position: absolute;
+  left: var(--s-3);
+  color: var(--icone-mudo);
+  pointer-events: none;
+}
+
+.buscaInput {
+  width: 240px;
+  max-width: 60vw;
+  min-height: var(--h-control);
+  padding: var(--s-2) var(--s-4);
+  padding-left: var(--s-7);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  transition: border-color var(--t-rapido) var(--suave);
+}
+
+.buscaInput::placeholder { color: var(--tinta-3); }
+.buscaInput:hover { border-color: var(--icone-mudo); }
+
+/* ── Tabela ───────────────────────────────────────────────────────────────────────────
+ *
+ * 🔴 A TABELA É UM PAINEL, e não é o card que morreu aqui. O card antigo era `--superficie` +
+ * borda `--linha-forte` + raio 8 + a faixa do cabeçalho pintada de `--trilho` por dentro —
+ * uma planilha dentro de um cartão, sobre uma página da mesma cor do cartão: três planos pra
+ * dois níveis de informação. A resposta da época foi tirar a caixa inteira, e a lista ficou
+ * boiando na página, sem nada dizendo onde ela começa.
+ *
+ * O painel de hoje tem raio 14, borda em `--linha` (macia) e `--elev-1`, e o cabeçalho SEGUE
+ * sendo tipografia (11/600 caixa alta `--tinta-3`) sem fundo próprio, ancorado por um filete
+ * `--linha-forte` — este filete FICA, e é o único do arquivo que fica: ele separa RÓTULO de
+ * DADO dentro da caixa, que é trabalho que borda nenhuma faz.
+ *
+ * O que sai é o filete entre LINHAS: dentro do painel a lista é pilha, e quem diz qual linha
+ * está sob o cursor é o realce com raio. */
+.tabela {
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: 0 var(--s-3) var(--s-3);
+}
+
+/* O cabeçalho alinha com o TEXTO das linhas (8px de `.tabela` + 8px de `.tabelaLinha`), e o
+ * filete dele sangra os 8px do padding lateral do painel pra ir de borda a borda. Sem a
+ * sangria, o filete começa e termina 8px dentro e lê como se estivesse solto. */
+.tabelaCabecalho {
+  display: grid;
+  gap: var(--s-5);
+  margin-inline: calc(var(--s-3) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+  border-bottom: 1px solid var(--linha-forte);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-micro);
+  color: var(--tinta-3);
+}
+
+/* 🔴 `min-height: var(--h-row)` é o PISO da linha de uma linha — 36px. O piso garante que
+ * uma célula vazia não encolha a linha e quebre a varredura vertical da coluna.
+ *
+ * ⚠️ A sangria negativa SAIU junto com o divisor. Ela existia pra a faixa de hover ultrapassar
+ * a margem de um bloco SEM caixa; dentro do painel, o realce tem que ficar recuado da borda —
+ * é o mesmo recuo do `.lista` do `ListCard`. O texto continua caindo em 16px da borda do
+ * painel (8 do `.tabela` + 8 daqui), que é onde o rótulo do cabeçalho também cai. */
+.tabelaLinha {
+  display: grid;
+  gap: var(--s-5);
+  min-height: var(--h-row);
+  align-items: center;
+  padding: var(--s-3);
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-controle);
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.tabelaLinha:hover { background: var(--superficie-hover); }
+
+.tabelaCelula {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabelaCelula:first-child { font-weight: 500; color: var(--tinta); }
+
+/* Célula da primeira coluna quando ela carrega um avatar. Só a lista de CONTATOS usa: o
+ * disco com iniciais é identidade de PESSOA, e um disco redondo ao lado do nome de uma
+ * empresa lê como se a empresa fosse gente. A assimetria é decisão, não esquecimento. */
+.celulaNome {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.celulaNome span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Paginação ──────────────────────────────────────────────────────────────────────── */
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.paginacaoInfo { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); }
+
+.paginacaoBtns { display: flex; gap: var(--s-3); }
+
+/* ── Campos customizados ───────────────────────────────────────────────────────────── */
+
+/* `auto-fit` com piso de 220px: na lateral de 4 trilhas dá UMA coluna; na largura cheia,
+ * quantas couberem. Não é `grid-template-columns` em `fr`, então fica fora do corte da
+ * barreira de grade de propósito — é uma grade de FORMULÁRIO, que se adapta ao contêiner,
+ * não uma linha de blocos da página. */
+.camposGrade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-5);
+}
+
+.camposSalvar { margin-top: var(--s-5); }
+
+/* Sem halo: o estado inválido é borda `--erro` + a mensagem do `.erro`. O halo de 3px do v1
+ * era sombra fingindo foco e não sobrevive à barreira. */
+.obrigatorio { color: var(--erro); font-weight: 500; }
+
+/* ── Seleção múltipla: CHIPS, não `<select multiple>` ──────────────────────────────────
+ *
+ * 🔴 O que isto substituiu era o `<select multiple>` NATIVO, e ele é um dos piores controles
+ * da plataforma. Três defeitos, todos reportados por comprador:
+ *   1. Escolher mais de um exige segurar Ctrl/Cmd. Ninguém descobre isso sozinho, e no toque
+ *      simplesmente não existe — no celular o controle é inoperável pra multi-seleção.
+ *   2. Um clique sem Ctrl APAGA tudo que já estava marcado. O erro é silencioso e destrutivo:
+ *      a pessoa marca cinco opções, clica na sexta e perde as cinco.
+ *   3. A altura é a do navegador (4 linhas), então uma lista de 12 opções vira uma caixinha
+ *      rolável dentro de um formulário — e a cor da opção não aparece em lugar nenhum, porque
+ *      `<option>` não aceita estilo confiável.
+ *
+ * O chip resolve os três: alvo grande, um clique por opção, estado visível sem foco, e espaço
+ * pro ponto de cor.
+ *
+ * A DOSE DA COR é sempre a mínima: ponto de 6px, nunca preenchimento. O rótulo é
+ * `--tinta`/`--tinta-2`, jamais a cor da opção: a paleta é escolhida pelo usuário e não tem como
+ * garantir contraste como texto. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--h-control);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  background: var(--superficie);
+  color: var(--tinta-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  cursor: pointer;
+  transition:
+    background-color var(--t-rapido) var(--suave),
+    border-color var(--t-rapido) var(--suave),
+    color var(--t-rapido) var(--suave);
+}
+.chip:hover { background: var(--superficie-hover); }
+.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Selecionado = wash + linha de accent + tinta cheia. TRÊS sinais, e nenhum deles é só a cor
+ * do ponto: quem não distingue cor precisa ver a mudança de peso da borda e do fundo. */
+.chipAtivo {
+  background: var(--acento-wash);
+  border-color: var(--acento-linha);
+  color: var(--tinta);
+  font-weight: 500;
+}
+
+/* O ponto da cor da opção. `aria-hidden` no TSX — o rótulo ao lado já diz qual é a opção, e
+ * a cor não carrega informação que o texto não carregue. */
+.chipPonto {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
+}
+
+/* Sem nenhuma opção disponível o campo não pode virar um vazio mudo: quem abre o registro
+ * precisa saber que falta CONFIGURAR o campo, não que o valor está em branco. */
+.chipsVazio {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* ── Anexos ────────────────────────────────────────────────────────────────────────────
+ *
+ * Bloco SEM caixa: rótulo + filete + linhas. A lista é uma pilha de
+ * linhas de 1px, o mesmo vocabulário do `ListCard`, e não uma grade de cartões de arquivo —
+ * anexo é referência, não objeto de primeira classe da tela. */
+
+.anexoVazio {
+  margin: 0 0 var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.anexoLista {
+  list-style: none;
+  margin: 0 0 var(--s-4);
+  padding: 0;
+}
+
+.anexoItem {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--h-row);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.anexoItem:last-child { border-bottom: 0; }
+
+/* `--icone-mudo` porque há rótulo de texto ao lado (o nome do arquivo). */
+.anexoIcone { color: var(--icone-mudo); flex-shrink: 0; }
+
+/* `min-width: 0` é o que permite o `text-overflow` funcionar dentro de um flex: sem ele o
+ * item de flex tem largura mínima de conteúdo e um nome longo EMPURRA os botões pra fora da
+ * lateral de 4 trilhas em vez de reticenciar. */
+.anexoNome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+}
+
+.anexoTamanho {
+  flex-shrink: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Botão só-de-ícone ⇒ `--tinta-3`, não `--icone-mudo`: sem rótulo de texto ao lado, o ícone
+ * informa sozinho e precisa do tom de texto). */
+
+/* 🔴 `<label>` estilizado no lugar do `<input type="file">` nativo. O input nativo desenha um
+ * botão do NAVEGADOR (o "Escolher arquivo" cinza do Chrome), que não obedece token nenhum e
+ * destoa de tudo em volta — retorno do dono na fatia da Marca, e a mesma correção. */
+.anexoUpload {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--h-control);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  background: var(--superficie);
+  color: var(--tinta-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+.anexoUpload:hover { background: var(--superficie-hover); }
+
+/* Durante o envio o rótulo já diz "Enviando…"; isto tira a mão de cima do controle. */
+.anexoUploadPendente { opacity: 0.5; cursor: not-allowed; }
+
+/* O `<input>` está `hidden`, então o anel de foco do teclado tem que aparecer no RÓTULO —
+ * senão o controle fica alcançável por Tab e invisível pra quem navega assim. */
+.anexoUpload:focus-within {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.anexoAjuda {
+  margin: var(--s-2) 0 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+/* ── Foco: UM anel, em tudo ──────────────────────────────────────────────────────────
+ * `outline` e não `box-shadow`: desenha FORA da caixa, não muda o layout e sobrevive ao
+ * modo de alto contraste do Windows. `:focus-visible` (e não `:focus`) pra o anel não pular
+ * a cada clique de mouse num botão. */
+/* 🔴 Esta lista tinha DEZENOVE seletores. Sobraram três — os controles deste arquivo que não
+ * são `Botao` nem `Entrada`/`Selecao`/`AreaTexto`, que trazem o anel por construção.
+ *
+ * Dezenove nomes numa lista é a forma mais silenciosa de perder o foco de um controle: basta
+ * renomear a classe num `.tsx` e ninguém aqui fica sabendo — a classe some do CSS e o anel
+ * some da tela, sem erro em lugar nenhum. */
+.chip:focus-visible,
+.seletorItem:focus-visible,
+.buscaInput:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Linha de lista e linha de relacionados focam com o anel PARA DENTRO: elas sangram 8px
+ * além da margem do bloco, e um anel com offset positivo sairia da coluna. */
+.tabelaLinha:focus-visible,
+.relLinha:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* ===== Excluir registro =====================================================
+   O botão nasce discreto (texto, sem caixa) porque apagar não é ação do dia a dia — e ele
+   fica FORA dos painéis, no pé da página, pelo mesmo motivo. A confirmação é que ganha peso,
+   com a borda vermelha e a contagem do que vai junto. Quem clica "Excluir" tem que ler antes
+   de conseguir clicar de novo. */
+.excluirWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.confirmaExcluir {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--erro);
+  border-radius: var(--r-controle);
+  background: var(--erro-wash);
+}
+
+.confirmaTexto {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+}
+
+.confirmaAcoes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+/* Excluir dentro de uma lista (timeline/agenda): ícone só, confirmação inline. Um modal
+   para apagar uma nota de duas linhas é desproporcional — apagar no 1º clique, não. */
+
+.confirmaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.confirmaItemTexto {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+.btnConfirmaItem,
+
+.btnConfirmaItem:disabled,
+.btnCancelaItem:disabled { opacity: 0.6; cursor: not-allowed; }

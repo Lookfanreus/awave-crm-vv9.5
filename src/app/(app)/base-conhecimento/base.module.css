@@ -1,0 +1,112 @@
+/* A tela da base de conhecimento. O que ela veste vem de dois lugares: `config.module.css` dá
+ * o esqueleto da página (bloco, campo, rótulo, lista, item, selo, ações) e a camada de
+ * componente da v0.7.0 (`Botao`, `Entrada`/`AreaTexto`) dá os CONTROLES. Aqui fica só o que é
+ * desta tela e não existe em nenhum dos dois.
+ *
+ * 🔴 `.textarea` SAIU: virou `<AreaTexto>`. Com ela foi embora o anel de foco próprio que
+ * este arquivo declarava — o anel do produto é um só e mora no componente. Não recrie
+ * nenhum dos dois aqui. */
+
+/* A contagem ao lado do campo, VIVA e em três estados: neutra, avisando e cheia. O aviso vem
+ * antes do teto de propósito — descobrir o limite perdendo o texto é a pior forma de descobrir,
+ * e o `maxLength` do campo silenciosamente para de aceitar o que a pessoa digita. */
+.contador {
+  align-self: flex-end;
+  margin-top: 4px;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+.contadorAviso { color: var(--aviso); }
+.contadorCheio { color: var(--erro); }
+
+/* A faixa de estado da busca. Ela NÃO é erro: o que ela descreve é o produto num estado que o
+ * comprador resolve numa tela, e o que ele escreveu continua gravado e valendo nos dois casos —
+ * a busca textual é coluna gerada e não custa chamada nenhuma. Por isso o chão é a moldura
+ * neutra, e não o wash de erro; a cor aqui seria a mensagem errada.
+ *
+ * ⚠️ O texto é que carrega o peso, e ele mudou: a faixa de "sem chave" agora diz que o
+ * assistente não roda de jeito nenhum sem a chave, porque ela é A MESMA do modelo de conversa. A
+ * moldura continua neutra porque nada foi perdido — não porque o estado seja confortável. */
+.faixaNeutra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  margin: 0 0 var(--s-5);
+  padding: var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+  /* `--trilho` é o POÇO — o chão que se distingue do que o contém sem se levantar dele.
+   *
+   * Aqui morava `--chrome`, do kit anterior, e a dúvida ("é poço ou é superfície levantada?")
+   * é respondida pelo próprio kit morto: ele declarava `--chrome` como *"sidebar, poço de
+   * kanban, trilho de segmented"*, e o `globals.css` de hoje declara `--trilho` como *"trilho
+   * de segmented, poço de coluna do kanban"*. É o MESMO papel, quase palavra por palavra.
+   *
+   * `--superficie-alta` seria a outra leitura possível, e ela está errada aqui por duas
+   * medições: as duas únicas ocorrências dela no produto (`.cartao` do kanban, `.gatilho` do
+   * seletor de espaço) vêm com borda, porque é objeto que SOBE — e esta faixa não tem borda;
+   * e as duas moram DENTRO de um painel, enquanto esta faixa é renderizada fora de qualquer
+   * `.bloco`, direto sobre o `--fundo` do `.shell`.
+   *
+   * Os vizinhos da mesma família de tela concordam: `.tutorial` e `.andamento`, no
+   * `config.module.css`, são blocos informativos neutros com `--trilho` + `--r-controle`. */
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+}
+
+/* A `.faixaAviso` saiu junto com o texto que ela pintava ("o assistente ainda não consulta esta
+ * base"). Regra de contenção do kit: a cor de aviso é conteúdo, e uma classe de aviso sem aviso
+ * é a moldura pronta esperando alguém pintar de laranja algo que não é urgente. */
+
+.faixaTexto {
+  margin: 0;
+  min-width: 0;
+}
+
+.faixaNeutra strong { font-weight: 500; color: var(--tinta); }
+
+.link {
+  color: var(--acento);
+  text-decoration: underline;
+}
+
+.link:hover { color: var(--acento-hover); }
+
+/* Link de texto dentro da faixa: é focável e não passa por componente nenhum, então o anel é
+ * declarado aqui — na receita padrão do produto, a mesma do `.linkExterno` do
+ * `config.module.css`. Sem ela o navegador desenha o dele, que no escuro é quase da cor da
+ * superfície. */
+.link:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* O trecho do conteúdo sob o título: duas linhas, e o resto some. A entrada inteira pode ter
+ * milhares de caracteres, e a lista existe para achar, não para ler. */
+.trecho {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.selos {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  margin-top: var(--s-1);
+}

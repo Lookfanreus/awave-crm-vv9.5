@@ -1,0 +1,209 @@
+/* MenuUsuario.module.css — menu da conta no PÉ DO RAIL (kit v2).
+ *
+ * Ele morava na top bar e desceu pra cá quando ela morreu, ao lado de Configurações:
+ * conta e sistema são a mesma família, e nenhum dos dois é conteúdo. Com ele e o seletor de
+ * workspace migrados, a top bar ficou sem nada pra segurar e morreu no desktop.
+ *
+ * 🔴 Um dos módulos que mantêm `box-shadow` (ver a barreira de sombra do kit): o menu
+ * flutua de verdade sobre o conteúdo. Card não — lá a separação é por borda.
+ *
+ * O GATILHO é uma linha do rail; o MENU transborda pra fora dele e pousa sobre a página. Os
+ * dois são `--superficie` desde a remodelação — o rail deixou de ser uma família de
+ * superfície própria, então não há mais um "lado escuro" e um "lado claro" do mesmo
+ * componente. */
+
+.wrap {
+  position: relative;
+}
+
+/* Largura cheia, sem fundo nem borda: no pé do rail ele é uma LINHA da lista, irmã de
+ * "Configurações" logo acima — não um botão avulso como era na barra. Daí também a
+ * `border-left` transparente de 2,5px: é a mesma régua que os itens de nav usam pra reservar
+ * a barra do estado ativo, e sem ela o avatar ficaria 2,5px fora da coluna dos ícones. */
+.gatilho {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--s-3);
+  background: transparent;
+  border: 0;
+  border-left: 2.5px solid transparent;
+  border-radius: var(--r-controle);
+  padding: var(--s-2) var(--s-3);
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+/* `--superficie-hover` — o MESMO hover dos itens de nav do rail e o mesmo do `.item` deste
+ * arquivo, logo abaixo. O gatilho é uma linha do rail, então o hover dele é o da lista.
+ *
+ * 🔴 Aqui estava `rgba(255, 255, 255, .045)`, cópia do véu que o rail usava. No tema claro o
+ * chão é `#FFFFFF` e o véu compunha `#FFFFFF` — hover que não fazia nada, medido em 1,00.
+ * Um véu branco só existe pra quem já sabe que o fundo é escuro, e nenhum módulo sabe em que
+ * tema está. Ver a nota do `.nav:hover` em `Rail.module.css`. */
+.gatilho:hover {
+  background: var(--superficie-hover);
+}
+
+/* O anel de FORA, o mesmo de todo controle avulso do produto. Ele cabe: o gatilho é a última
+ * linha do `.rodape`, recuado 12px das bordas laterais do rail e com outros 12px de respiro
+ * abaixo dele — e o rail não tem `overflow` nenhum, então nada clipa os 4px que o anel alcança.
+ *
+ * Sem esta regra o gatilho caía no anel padrão do navegador, que muda de desenho por navegador
+ * e some contra fundo escuro. `:focus-visible` e não `:focus`, senão ele acende no clique de
+ * mouse e deixa de significar "o teclado está aqui". */
+.gatilho:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* ⚠️ O `.avatar` local saiu nesta rodada do kit — quem desenha agora é `components/ui/Avatar`
+ * (`tamanho="sm"`, 24px), com a cor derivada do NOME.
+ *
+ * O que estava aqui era um disco `--trilho` com as iniciais, e ele tinha um comentário
+ * explicando que NÃO usava o accent porque, no rail, azul quer dizer "você está aqui". Esse
+ * raciocínio continua de pé e o avatar novo não o quebra: a cor dele vem do hash do nome,
+ * então ela é azul só por coincidência e para um nome específico — e mesmo aí é um DISCO
+ * CHEIO de 24px no pé, não a barra de 2,5px com glow que marca o item ativo. As duas coisas
+ * não se confundem nem por cor nem por forma.
+ *
+ * Ganhou também o anel translúcido que o componente traz, no lugar do `--linha` que
+ * este disco precisava pra não sumir contra o fundo do pé do rail. */
+
+.texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  text-align: left;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Só o NOME no gatilho — o e-mail é dado de conta, não de navegação, e já aparece no
+ * cabeçalho do menu a um clique. */
+.texto b {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--tinta-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  color: var(--tinta-3);
+  flex-shrink: 0;
+}
+
+/* 🔴 ESTE ABRE PRA CIMA, E É A PARTE MAIS FÁCIL DE ERRAR DESTE ARQUIVO.
+ *
+ * O gatilho fica a ~40px do rodapé da janela. Com o `top: calc(100% + …)` que ele usava na
+ * top bar, o menu inteiro nasceria ABAIXO da borda inferior da tela — invisível, sem
+ * rolagem que o alcance, porque ele é `position: absolute` dentro de um rail de altura
+ * `100vh`. Daí `bottom: calc(100% + …)`: ancoragem invertida no eixo Y.
+ *
+ * `left: 0` + `min-width: 260px` resolvem o outro eixo: o rail tem 244px, e um menu preso à
+ * largura dele espremeria o e-mail. Ancorado à esquerda, o excedente TRANSBORDA pra direita,
+ * sobre o conteúdo — que é o lado onde há espaço. Ancorado à direita ele cresceria pra
+ * esquerda, pra fora da janela.
+ *
+ * ⚠️ Isto só funciona porque o `.rail` não tem `overflow` (ver a nota lá): `overflow-y:auto`
+ * faz o `overflow-x` computar pra `auto` junto e cortaria este menu nos dois eixos. */
+.menu {
+  position: absolute;
+  bottom: calc(100% + var(--s-2));
+  left: 0;
+  min-width: 260px;
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-2);
+  padding: var(--s-2);
+  z-index: 20;
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+  margin-bottom: var(--s-2);
+}
+
+/* 500, não 600: nome é o "peso de trabalho" da escala — o 600 é só pra texto pequeno em
+ * caixa alta. Quem separa o nome do e-mail logo abaixo é a COR (`--tinta` vs `--tinta-3`). */
+.cabecalho b {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.cabecalho small {
+  font-size: var(--fs-body);
+  color: var(--tinta-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* O seletor de tema. Ele traz a própria moldura (`SeletorTema.module.css`), então aqui só o
+ * lugar dele na pilha: encostado à esquerda como as linhas do menu, e com o mesmo respiro
+ * que separa o cabeçalho do resto.
+ *
+ * A classe é aplicada NO seletor, não num invólucro. Já foi exigência da ARIA (o menu tinha
+ * um papel que proibia um `<div>` de posicionamento entre os itens); hoje é só desenho — um
+ * invólucro a mais só acrescentaria uma caixa sem função. */
+.tema {
+  margin: 0 var(--s-3) var(--s-2);
+}
+
+/* `min-height: var(--h-row)` no lugar do `padding: 9px 10px`: 9 e 10 estão fora da escala
+ * de 4, e a altura de uma linha de menu é densidade, não folga — é o mesmo motivo do
+ * `--h-row` na linha do ListCard. */
+.item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-pequeno);
+  min-height: var(--h-row);
+  padding: 0 var(--s-3);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--tinta-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.item svg {
+  color: var(--tinta-3);
+}
+
+.item:hover {
+  background: var(--superficie-hover);
+}
+
+/* O anel de DENTRO, pela mesma aritmética do seletor de workspace: o `.menu` tem
+ * `padding: var(--s-2)` (4px) e uma borda de 1px, e o anel de fora alcança exatamente 4px — ele
+ * pousaria EM CIMA da borda do painel e leria como contorno do menu, não da linha focada.
+ *
+ * ⚠️ O seletor de tema logo acima NÃO precisa de regra aqui: ele traz o próprio anel, como
+ * todo controle que vem de componente. Quem desenha o controle é quem responde pelo foco dele. */
+.item:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+.item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ⚠️ Não há mais media query aqui. O recorte de 1024px escondia nome e chevron porque os
+ * dois disputavam a top bar com o seletor de workspace. No pé do rail — que abaixo de
+ * 1024px vira uma gaveta de 280px — há espaço de sobra, e saber de que conta a gaveta é
+ * pertence à mesma pergunta que ela responde. */

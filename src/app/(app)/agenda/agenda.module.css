@@ -1,0 +1,287 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+/* agenda.module.css — /agenda, o cockpit das atividades. Kit v2.
+ *
+ * 🔴 A LINHA PERDEU O CARTÃO (A9) E DEPOIS GANHOU COLUNAS (esta rodada). A caixa saiu na
+ * rodada anterior; o que sobrou foi um flex de três partes — tile de ícone, corpo `flex: 1` e as
+ * ações — e num conteúdo de 1170px isso deixava **~700px de branco** entre o texto e o
+ * botão "Concluir", com os dois botões pousados na borda direita sem nada os ancorando. É a
+ * mesma doença que o `.detalheGrade 8fr 4fr` curou no detalhe do negócio: uma coluna larga
+ * demais pro que se escreve nela.
+ *
+ * A cura aqui é outra, porque o objeto é outro: a agenda não tem duas regiões, tem QUATRO
+ * CAMPOS por item — quando, o quê, onde, e o que fazer. Então a linha vira **linha de
+ * tabela** (a mesma virada do `.tabela` do `_crm`: cabeçalho tipográfico sobre branco, sem
+ * poço e sem raio), com trilhas fixas nas pontas e o texto no meio:
+ *
+ *     88px      16px    1fr                          240px             auto
+ *     03/08 10h  ☎  Ligar pro Carlos e confirmar…  Fornecimento…  [✓ Concluir] [⟳]
+ *
+ * auditoria:ok buraco — "buraco" aqui e abaixo é o vão de layout que a grade fecha, não falha de segurança.
+ * O ganho não é só fechar o buraco: com o "quando" numa coluna própria, tabular e alinhada,
+ * a agenda passa a ser varrida por TEMPO, que é a única pergunta que se faz a ela. Antes a
+ * data era uma legenda de 13px espremida embaixo do título, no meio de um `·`.
+ *
+ * O mapeamento de papéis da linha de lista é literal: título = "nome" (13/500 `--tinta`),
+ * quando = "valor" (13/500 `--tinta`, tabular, coluna de largura FIXA) e alvo = "subtítulo"
+ * (13/400 `--tinta-3`).
+ *
+ * `.head`/`.sub` foram apagadas: eram o cabeçalho local, morto desde que a tela passou a
+ * usar o `CabecalhoPagina`. */
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cada balde é um PAINEL desde que a regra de contenção foi invertida. Eram três regiões
+ * separadas só por 32px de espaço e um filete sob o rótulo — na tela, três listas boiando.
+ *
+ * ⚠️ O vão entre elas cai pra `--s-4` (12), o do protótipo: com borda de cada lado, 32
+ * abriam buraco. `margin-top` no irmão continua sendo o mecanismo (e não `gap` no `.pagina`)
+ * porque a primeira seção tem que herdar o respiro do `CabecalhoPagina` sem somar com ele. */
+.secao + .secao {
+  margin-top: var(--s-4);
+}
+
+.secao {
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: 0 var(--s-3) var(--s-3);
+}
+
+/* ── Rótulo do balde ─────────────────────────────────────────────────────────────────
+ *
+ * 11/600 CAIXA ALTA com tracking, em `--tinta-3` — o rótulo de seção micro do kit (o mesmo
+ * dos grupos do rail e das colunas da faixa de KPI), não o 13/500 `--tinta-2` do `.blocoCab`.
+ *
+ * A escolha é sobre o QUE estes três rótulos são. Um `.blocoCab` anuncia um bloco de
+ * conteúdo autônomo ("Timeline", "Campos", "Parados há mais de 14 dias"); Atrasadas/Hoje/
+ * Próximas não são três blocos, são UMA lista cortada pelo tempo. Em caixa alta micro eles
+ * recuam pro papel de divisor e a página lê como uma coluna contínua de trabalho — que é o
+ * que ela é. Em 13/500 os três competiam com o título da tela logo acima.
+ *
+ * ⚠️ Isto NÃO é a volta do 12/600 `--text-subtle` que a A9 matou: aquilo reprovava por
+ * TAMANHO (12 não existe na escala) e por COR (2,58:1). Aqui são 11px — o tamanho que o
+ * escala reserva pra caixa alta — e `--tinta-3`, 5,74:1. */
+.secaoTitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  /* Cabeçalho do painel: o recuo negativo devolve o rótulo à borda da caixa, porque o
+   * `padding` lateral do `.secao` é do CORPO (o recuo do realce de hover das linhas). O
+   * filete que ficava aqui saiu — a borda da caixa já marca onde a seção começa. */
+  margin-inline: calc(var(--s-3) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+/* Badge de contagem, a receita do kit: `--r-pill`, micro, fundo `--trilho`, texto
+ * `--tinta-3`. O de atraso é o único que muda de cor — é o balde que exige ação hoje. */
+.contagem,
+.contagemAtraso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.contagem { background: var(--trilho); color: var(--tinta-3); }
+.contagemAtraso { background: var(--erro-wash); color: var(--erro); }
+
+/* ── Linha ───────────────────────────────────────────────────────────────────────────
+ *
+ * `min-height: var(--h-row)` é PISO, não altura: a linha é de UMA linha de texto agora que o
+ * "quando" e o alvo saíram de baixo do título, então ela fecha em 36+16 = 52px.
+ *
+ * As trilhas das pontas são fixas de propósito — é o que faz as datas e os botões caírem
+ * todos no mesmo x. `minmax(0, …)` nas duas do meio porque `1fr` sozinho é
+ * `minmax(auto, 1fr)`, e esse `auto` deixaria um título longo virar piso de largura e
+ * empurrar as ações pra fora da tela. */
+/* 2px entre linhas, como o `.lista` do `ListCard`: sem ela dois realces de hover vizinhos se
+ * encostam e a pilha volta a parecer tabela. */
+.lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 88px 16px minmax(0, 1fr) minmax(0, 240px) auto;
+  grid-template-areas: 'quando icone titulo alvo acoes';
+  align-items: center;
+  column-gap: var(--s-4);
+  min-height: var(--h-row);
+  /* Dentro do painel a lista é pilha: o divisor entre linhas saiu e quem diz qual linha está
+   * sob o cursor é o realce com raio, recuado da borda pelo padding do `.secao`. */
+  padding: var(--s-3);
+  border-radius: var(--r-controle);
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+/* Realce de linha inteira. A linha NÃO é clicável (ela contém dois controles e um link), e
+ * ainda assim o realce não é enfeite: com as ações a ~800px do texto, é ele que garante que
+ * o "Concluir" que você vai clicar pertence à atividade que você acabou de ler. Sem borda e
+ * sem raio — o realce é uma tinta de varredura, não um card que aparece no hover. */
+.linha:hover { background: var(--superficie-hover); }
+
+/* 🔴 Ícone SOLTO de 16px, não o tile de 32px em `--trilho` que estava aqui.
+ *
+ * O tile era a coisa mais pesada da tela e a que menos informava: vinte quadrados cinzas
+ * descendo pela margem esquerda de uma lista que já é lida pela coluna de horários. E o
+ * MESMO objeto já se desenha assim no widget "Minha agenda" do painel (ícone solto, sem
+ * tile) — duas renderizações da mesma atividade em duas telas é o que faz o produto parecer
+ * dois produtos.
+ *
+ * `--tinta-3` e não `--icone-mudo`: este ícone informa SOZINHO (o tipo da atividade não tem
+ * rótulo ao lado), e ícone que informa sozinho vai em tom de TEXTO — `--icone-mudo` é só
+ * pro decorativo, o que tem rótulo colado. */
+.icone {
+  grid-area: icone;
+  display: inline-flex;
+  color: var(--tinta-3);
+}
+
+.titulo {
+  grid-area: titulo;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A coluna que a agenda existe pra responder. Tabular porque as datas se comparam em
+ * coluna — sem isso "03/08" e "12/08" não alinham dígito com dígito. */
+.quando,
+.quandoAtraso {
+  grid-area: quando;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.quando { color: var(--tinta); }
+.quandoAtraso { color: var(--erro); }
+
+/* O alvo é o "subtítulo" da linha de lista — 13/400 `--tinta-3` —, e continua sendo link. Ele
+ * NÃO nasce azul, e isso é sobre dose: numa coluna em que TODA célula é link, vinte textos
+ * em `--acento` viram a mancha mais forte de uma tela cujo assunto é outro (o mesmo motivo
+ * pelo qual o `.tabelaLinha` do `_crm` é uma linha inteira clicável com texto em tom de
+ * texto).
+ * O azul e o sublinhado chegam no hover, junto com o realce da linha. */
+.alvo {
+  grid-area: alvo;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+a.alvo:hover {
+  color: var(--acento);
+  text-decoration: underline;
+}
+
+.acoes {
+  grid-area: acoes;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Abaixo de 720px as cinco trilhas não cabem: o título ficaria com ~120px e viraria
+ * reticências no terceiro caractere. A linha empilha, e o ícone passa a ancorar a coluna de
+ * texto inteira em vez de uma linha só. */
+@media (max-width: 720px) {
+  .linha {
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'icone titulo acoes'
+      'icone quando acoes'
+      'icone alvo   acoes';
+    align-items: start;
+    row-gap: var(--s-1);
+  }
+
+  .icone { margin-top: var(--s-1); }
+  .acoes { align-self: center; }
+}
+
+/* ── Vazio ──────────────────────────────────────────────────────────────────────────────
+ *
+ * O bloco é o `components/ui/EstadoVazio` (ícone + título + explicação + saída). O que
+ * sobra local é só o BOTÃO, porque o kit ainda não tem componente de botão e cada tela
+ * desenha o seu (`.botaoPrimario` no /config e no /automacoes, `.agendaVazioAcao` no
+/* ── Filtro minhas/todas — segmented ──────────────────────────────────────────── */
+
+/* Trilho `--trilho`, ativo em `--superficie` com borda `--linha-forte`. NÃO é azul sólido: o
+ * segmented diz "qual recorte estou vendo", não "clique aqui", e sólido ele competia com o
+ * botão primário da tela. Mesma receita, ao pixel, do `.periodo` do painel. */
+.filtro {
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+}
+
+.filtroItem,
+.filtroAtivo {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-pequeno);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+.filtroItem { color: var(--tinta-3); }
+.filtroItem:hover { color: var(--tinta); }
+
+.filtroAtivo {
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+
+/* Foco: UM anel, o mesmo do resto do produto. */
+.filtroItem:focus-visible,
+.filtroAtivo:focus-visible,
+.alvo:focus-visible,
+.vazioAcao:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

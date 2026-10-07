@@ -1,0 +1,175 @@
+/* O vocabulário de AÇÃO do produto — um só lugar.
+ *
+ * Antes deste arquivo, 76 nomes de classe distintos desenhavam botão em 16 módulos, e 13 deles
+ * eram a MESMA variante (fundo de acento, tinta invertida) escrita treze vezes com paddings
+ * diferentes. Nenhuma barreira pegava isso: cada uma usava token certo, o que variava era a
+ * COMBINAÇÃO. Barreira pega valor; ela não pega combinação. O que resolve é vocabulário.
+ *
+ * As três variantes e os três tons saíram de medição, não de gosto — quem tinha um leitor só
+ * ficou de fora e continua sendo a classe do arquivo dele. */
+
+/* ── A base ────────────────────────────────────────────────────────────────────────────────
+ *
+ * Os quatro ganchos `--botao-*` existem para o `tom` trocar COR sem reescrever variante: o
+ * `primario` pinta o fundo com `--botao-cor`, o `secundario` pinta a borda e o texto, o
+ * `fantasma` pinta só o hover. Sem eles, cada par (variante × tom) precisaria da sua própria
+ * regra e voltaríamos à combinatória que este arquivo existe para matar. */
+.raiz {
+  --botao-cor:       var(--acento);
+  --botao-cor-hover: var(--acento-hover);
+  --botao-cor-ativo: var(--acento-ativo);
+  --botao-wash:      var(--acento-wash);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-controle);
+  /* `font-family: inherit` porque `<button>` NÃO herda fonte do documento por padrão — sem
+   * isto o botão sai na fonte do sistema e destoa de todo o resto da tela. */
+  font-family: inherit;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  white-space: nowrap;
+  /* Serve o `<a>`/`<Link>` que este mesmo componente vira quando recebe `href`. */
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--t-rapido) var(--suave),
+    border-color var(--t-rapido) var(--suave),
+    color var(--t-rapido) var(--suave);
+}
+
+/* O anel de foco é UM SÓ no produto inteiro, e é este. Sempre o acento, nunca o `--botao-cor`:
+ * o anel diz "o teclado está aqui", não diz de que tipo é o botão — e um anel vermelho num
+ * botão de excluir se confunde com o estado de erro do próprio controle. */
+.raiz:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Os dois jeitos de estar fora de ação, com a MESMA aparência de propósito.
+ *
+ * 🔴 `[aria-disabled='true']` é o estado CARREGANDO e não é decorativo: `disabled` tira o
+ * elemento da ordem de foco e o navegador devolve o foco pro <body>, então quem navega por
+ * teclado perde o lugar no meio da própria ação e não volta quando o botão reabilita. Quem
+ * barra o clique é o `.tsx`. Mesma decisão do seletor de tema, pelo mesmo motivo. */
+.raiz:disabled,
+.raiz[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Os tons ───────────────────────────────────────────────────────────────────────────────
+ *
+ * `ok` e `erro` não têm degrau de hover/ativo próprio no `globals.css` (só o acento tem), e
+ * inventar um aqui seria cor fora da escala. Os três ganchos apontam para a mesma cor: o que
+ * muda no hover destes dois é o véu (`--botao-wash`), não a tinta. */
+.raiz[data-tom='ok'] {
+  --botao-cor:       var(--ok);
+  --botao-cor-hover: var(--ok);
+  --botao-cor-ativo: var(--ok);
+  --botao-wash:      var(--ok-wash);
+}
+
+.raiz[data-tom='erro'] {
+  --botao-cor:       var(--erro);
+  --botao-cor-hover: var(--erro);
+  --botao-cor-ativo: var(--erro);
+  --botao-wash:      var(--erro-wash);
+}
+
+/* ── As variantes ──────────────────────────────────────────────────────────────────────────
+ *
+ * ⚠️ O `:not([aria-disabled='true'])` acompanha o `:not(:disabled)` em TODA regra de hover e
+ * de active. Sem ele o botão carregando — que continua focável e continua recebendo hover,
+ * porque `aria-disabled` não muda nada no navegador — acenderia como se ainda respondesse. */
+.primario {
+  background: var(--botao-cor);
+  color: var(--tinta-invertida);
+}
+.primario:hover:not(:disabled):not([aria-disabled='true']) { background: var(--botao-cor-hover); }
+.primario:active:not(:disabled):not([aria-disabled='true']) { background: var(--botao-cor-ativo); }
+
+.secundario {
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+  color: var(--tinta-2);
+}
+/* Com tom, o secundário JÁ nasce colorido no texto — é o botão "Ganhar"/"Perder", que precisa
+ * ser lido como semântico em repouso, não só no hover. */
+.secundario[data-tom='ok'],
+.secundario[data-tom='erro'] { color: var(--botao-cor); }
+
+.secundario:hover:not(:disabled):not([aria-disabled='true']) {
+  border-color: var(--botao-cor);
+  background: var(--botao-wash);
+  color: var(--botao-cor);
+}
+
+/* Sem moldura em repouso. É a forma certa quando há três ou mais ações na mesma linha: com
+ * borda e fundo em cada uma, quinze botões competiam com o conteúdo da tela. */
+.fantasma {
+  background: transparent;
+  border-color: transparent;
+  color: var(--tinta-3);
+}
+.fantasma:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--superficie-hover);
+  border-color: var(--linha);
+  color: var(--tinta);
+}
+/* Destrutivo e irreversível: só ele muda de COR no hover, e é o único aviso que a pessoa
+ * recebe antes de clicar. */
+.fantasma[data-tom='ok']:hover:not(:disabled):not([aria-disabled='true']),
+.fantasma[data-tom='erro']:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--botao-wash);
+  border-color: var(--botao-wash);
+  color: var(--botao-cor);
+}
+
+/* ── Os tamanhos ───────────────────────────────────────────────────────────────────────────
+ *
+ * Dois, e o levantamento não achou um terceiro: `medio` é o botão de formulário e de cabeçalho
+ * (todos os que já traziam `min-height: var(--h-control)`), `pequeno` é a ação compacta em
+ * barra de linha (todos os que já traziam `padding: var(--s-2) var(--s-3)` e nenhuma altura).
+ *
+ * A altura do `medio` vem do `min-height`, não do padding vertical: o padding-block ficava
+ * entre `--s-2` e `--s-4` nas onze cópias do primário e não mudava a altura de nenhuma delas,
+ * porque o `min-height` dominava em todas. Era variação sem efeito, e portanto sem opinião. */
+.medio {
+  min-height: var(--h-control);
+  padding: 0 var(--s-5);
+}
+
+.pequeno {
+  padding: var(--s-2) var(--s-3);
+  /* Raio menor porque o objeto é menor: `--r-controle` (10px) numa altura de ~27px come o
+   * canto inteiro e o botão vira pílula sem querer. */
+  border-radius: var(--r-pequeno);
+}
+
+/* ── Só ícone ──────────────────────────────────────────────────────────────────────────────
+ *
+ * Quadrado, sem padding-inline e sem gap. Os cinco tamanhos que existiam à mão (24, 26, 28, 32
+ * e o do kebab) viram dois — e os dois são degraus da escala, não números novos. */
+.soIcone {
+  padding: 0;
+  gap: 0;
+  flex-shrink: 0;
+}
+.soIcone.medio {
+  width: var(--h-control);
+  height: var(--h-control);
+}
+.soIcone.pequeno {
+  width: var(--s-6);
+  height: var(--s-6);
+}
+
+/* Ocupar a linha: é o botão de rodapé de formulário e o de submissão das telas de entrada. */
+.larguraTotal {
+  width: 100%;
+}

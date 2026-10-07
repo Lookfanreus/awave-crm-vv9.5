@@ -1,0 +1,123 @@
+/* loading.module.css — o esqueleto do painel (kit v2).
+ *
+ * 🔴 As medidas daqui não são decorativas: elas copiam as do `page.tsx` e do
+ * `painel.module.css`. A função do esqueleto é reservar o MESMO espaço que o conteúdo vai
+ * ocupar; se ele reservar menos, a página salta na hora em que o dado chega — e um salto de
+ * layout é pior que a tela em branco que ele veio substituir, porque acontece depois de a
+ * pessoa já ter começado a ler.
+ *
+ * Se a estrutura do painel mudar (B5 muda o funil), este arquivo muda junto. */
+
+/* 🔴 O container espelha o `.conteudo` do shell: flex-column com o MESMO `gap`. Sem isto os
+ * blocos do esqueleto são irmãos de BLOCO com as próprias margens enquanto os do painel real
+ * herdam o gap do shell — o esqueleto reserva menos por fronteira e a página salta pra baixo
+ * quando o dado chega, que é exatamente o que ele existe pra impedir. */
+.pilha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  /* Mesmo respiro do `.cabecalho` do CabecalhoPagina. */
+  margin-bottom: var(--s-2);
+}
+
+/* Espelha o `.faixaKpi` do painel: quatro PAINÉIS com vão de 12. Os filetes divisores que
+ * moravam aqui saíram junto com os de lá — hoje quem separa uma célula da outra é a borda de
+ * cada `KpiCard`, e é ela que o esqueleto tem que reservar. */
+.faixaKpi {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+/* Espelha o `KpiCard` convertido: painel com padding de 16. */
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: var(--s-5);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 6fr 6fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* Espelha o `ListCard`/`ChartCard` convertidos. O `padding` fica só nas laterais e embaixo: o
+ * `.blocoHead` traz o de cima, como no componente real. */
+.bloco {
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  padding: 0 var(--s-5) var(--s-5);
+}
+
+/* Espelha o `.linhaEtapa` do funil: nome fixo · trilho elástico · valor fixo, na mesma
+ * altura de linha. Sem a contagem — 40px de esqueleto ao lado de outro esqueleto não diz
+ * nada, e o que importa aqui é reservar a altura certa. */
+.linhaFunil {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) 108px;
+  align-items: center;
+  gap: var(--s-4);
+  height: 34px;
+}
+
+/* Espelha o `.header` dos blocos convertidos: o recuo negativo devolve o cabeçalho à borda do
+ * painel, porque o `padding` lateral do `.bloco` serve ao corpo. O filete que ficava aqui
+ * saiu junto com o de lá — hoje quem marca o começo da seção é a borda da caixa. */
+.blocoHead {
+  margin-inline: calc(var(--s-5) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--h-row);
+  padding: var(--s-3);
+}
+
+.linhaTextos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .faixaKpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .linhaFunil {
+    grid-template-columns: 96px minmax(0, 1fr) 96px;
+  }
+}
+
+@media (max-width: 640px) {
+  .faixaKpi {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

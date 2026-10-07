@@ -1,0 +1,67 @@
+/* licenca.module.css — o que SÓ a tela de bloqueio tem. Kit v2.
+ *
+ * 🔴 Ele é fino de propósito. A moldura, o cartão, o lockup, o título, o subtítulo, o
+ * invólucro de ação, o botão e a caixa de erro vêm todos de `(auth)/auth.module.css` — a
+ * receita oficial do kit v2 pras telas FORA do shell, a mesma que `/entrar`, `/cadastrar`,
+ * `/convite/[token]` e `/sem-workspace` usam. Esta é a quinta tela da família.
+ *
+ * Copiar aquele arquivo pra cá seria repetir um bug já pago: `sem-workspace.module.css`
+ * existiu até 2026-08-05 sendo o `auth.module.css` byte a byte, com UMA divergência — o
+ * `.erro` de lá tinha `margin-top` e o de cá não —, então a mesma mensagem nascia colada no
+ * subtítulo numa tela e não na outra. Ninguém viu, porque estado de erro não se abre pra
+ * conferir. Uma quinta cópia recriaria exatamente essa forma de envelhecer.
+ *
+ * O que sobra aqui são as duas coisas que a família não tem. */
+
+/* O selo de estado fica ACIMA do título (o rótulo curto antes da frase). Quem desenha a
+ * pílula é o `<Pill>` do kit; este invólucro só carrega o respiro até o título, porque
+ * espaçamento é relação ENTRE irmãos e pertence a quem os empilha — mesma lógica que faz a
+ * `.faixaKpi` do painel desenhar o divisor em vez do `KpiCard`. */
+.selo {
+  margin-bottom: var(--s-4);
+}
+
+/* O `.verificar` saiu daqui. Ele existia porque o `.botao` do `auth.module.css` não tinha
+ * estado desabilitado, e esta tela precisava: aqui o clique vai ao Hub e a tela FICA — sem
+ * sinal de "estou indo", o comprador clica três vezes achando que não pegou.
+ *
+ * O `Botao` tem o estado por construção, e nos dois sabores que faltavam: `carregando`
+ * (`aria-disabled`, mantém o foco) e `desabilitado` (`disabled` nativo). O raciocínio de
+ * especificidade que este comentário carregava — sobre `.verificar:disabled` (0,2,0) ganhar do
+ * `.botao` (0,1,0) — era exatamente o custo de duas folhas disputando o mesmo controle. */
+
+/* Régua entre as zonas do cartão. As outras quatro telas da família têm UMA ação, então a
+ * família nunca precisou disto; esta tem até três (verificar · trocar a chave · sair) e, sem
+ * uma régua, o campo de chave lê como parte do botão de cima.
+ *
+ * É o `.rodape` do `auth.module.css` menos o `text-align: center` — que é justamente o que
+ * não serve pra um formulário. Não virou variante lá de propósito: o centro está certo pras
+ * quatro telas que já usam o `.rodape`, e mexer no compartilhado pra servir a quinta é a
+ * troca errada. E a separação DENTRO do cartão é filete + respiro, nunca uma segunda caixa:
+ * a regra de contenção dá caixa a bloco de CONTEÚDO, e o bloco aqui é o cartão inteiro —
+ * subdividi-lo em caixas é caixa dentro de caixa. */
+.secao {
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha);
+}
+
+/* "Sair" é `<button>` e não `<a>`: logout é AÇÃO (a `sairAction()` limpa cookie), e um link
+ * mentiria sobre isso pra quem navega por teclado ou leitor de tela. O `.link` do
+ * `auth.module.css` assume `<a>`, então só a cor, o peso e a transição vêm de lá; o que falta
+ * é o reset que a folha do navegador não dá de graça num botão.
+ *
+ * Sem conflito de ordem entre os dois módulos: `.link` declara `color`/`font-weight`/
+ * `transition` e este declara `background`/`border`/`padding`/`cursor` — conjuntos disjuntos,
+ * então não importa qual folha vem primeiro. */
+.sair {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sair:disabled {
+  opacity: .5;
+  cursor: default;
+}

@@ -1,0 +1,240 @@
+/* A tela de conexão do WhatsApp. Quase tudo vem do `config.module.css` (bloco, campo,
+ * lista, item, selo); aqui fica só o que é desta tela e não existe lá. */
+
+/* O código de pareamento.
+ *
+ * 🔴 Ele tem moldura, e isso NÃO contradiz a regra de contenção. A moldura não separa um
+ * bloco de conteúdo: ela é a quiet zone do próprio código — um QR encostado em texto ou em
+ * outra borda deixa de ser lido pela câmera. */
+.codigo {
+  display: flex;
+  gap: var(--s-5);
+  align-items: flex-start;
+  margin-top: var(--s-4);
+  /* O `.item` do `config.module.css` é uma linha com `flex-wrap: wrap`; a base de 100% é o
+   * que joga o código inteiro pra uma linha só sua em vez de espremê-lo numa 3ª coluna. */
+  flex-basis: 100%;
+}
+
+.codigoImagem {
+  flex-shrink: 0;
+  width: 220px;
+  height: 220px;
+  padding: var(--s-3);
+  /* 🔴 BRANCO CRAVADO, e é a única cor desta tela que NÃO segue o tema. A quiet zone de um QR
+   * é definida como área CLARA em volta dos módulos; no tema escuro (o padrão desde a v0.7.0)
+   * `--superficie` é #101016, e o anel de 8px em volta do código viraria quase preto — a
+   * moldura deixaria de ser quiet zone e passaria a ser exatamente a borda escura contra a
+   * qual o comentário acima existe. É o mesmo motivo pelo qual todo aplicativo que mostra QR
+   * em tema escuro (o WhatsApp Web inclusive) desenha o código sobre uma placa branca.
+   *
+   * O token velho `--surface` era branco NOS DOIS estados que o kit morto tinha (ele não tinha
+   * tema escuro), e o comentário que estava aqui dizia, com todas as letras, que ele era
+   * explícito "caso um dia a página deixe de ser branca". Esse dia chegou; a renomeação
+   * literal para `--superficie` teria entregue o contrário do que a linha pedia.
+   *
+   * ⚠️ Se aparecer um SEGUNDO sítio que precise de branco garantido nos dois temas, o certo é
+   * cunhar um token fora do bloco de tema — o precedente do produto é o `--polegar`
+   * (`globals.css`) — e não repetir este hex. Dois literais iguais em arquivos diferentes
+   * divergem no primeiro dia em que alguém mexer num só.
+   * tema:ok hex — quiet zone de QR precisa ser clara nos dois temas, senao a camera nao le */
+  background: #FFFFFF;
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  /* Sem isto o navegador borra os módulos do código ao esticar, e a leitura falha. */
+  image-rendering: pixelated;
+}
+
+.codigoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+/* Os passos da leitura, numerados. Lista de verdade (`<ol>`) porque a ORDEM é a instrução. */
+.passosLeitura {
+  margin: 0;
+  padding-left: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  color: var(--tinta-3);
+}
+
+/* 🔴 A frase que diz DE QUEM é a instância. Ela é a metade humana da defesa do QR: o código
+ * sozinho não mostra em que servidor o aparelho vai ser pareado, e uma copy plausível
+ * ("reconecte seu número") basta pra pendurar o número da empresa numa instância de outro. */
+.codigoDono {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta);
+  font-weight: 500;
+}
+
+/* Linha de canal: o nome e o estado em cima, a ajuda embaixo. */
+.canalInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.canalTopo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.canalNome {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.canalAjuda {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.canalAlerta {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--aviso);
+}
+
+/* O aviso de pré-requisito que falta. Wash semântico: aqui a cor É o conteúdo. */
+.pendencia {
+  margin-top: var(--s-4);
+  padding: var(--s-4);
+  border-radius: var(--r-controle);
+  background: var(--aviso-wash);
+  color: var(--aviso);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+/* ── O seletor de tipo de canal ────────────────────────────────────────────────────────
+ *
+ * Receita de segmented do produto: trilho `--trilho`, ativo em `--superficie` com borda. Ele
+ * diz QUAL formulário está em foco — não "clique aqui" —, por isso não é fundo de acento.
+ *
+ * O trilho é `--trilho` e não `--superficie-alta` porque o próprio `globals.css` declara a
+ * família como "trilho de segmented, poço de coluna do kanban, badge" — é o poço, o que
+ * AFUNDA. O kit morto descrevia o `--chrome` que estava aqui com as mesmas palavras
+ * ("sidebar, poço de kanban, trilho de segmented"), então este par é renomeação, não escolha.
+ *
+ * 🔴 A borda transparente em repouso é RÉGUA, não decoração: sem ela o rótulo desliza 2px
+ * quando a opção vira a ativa e a linha inteira treme a cada troca. */
+.seletorTipo {
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  margin-bottom: var(--s-4);
+  background: var(--trilho);
+  border-radius: var(--r-controle);
+}
+
+.opcaoTipo {
+  min-height: var(--h-control);
+  padding: 0 var(--s-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-controle);
+  background: transparent;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-3);
+  cursor: pointer;
+  transition: color var(--t-rapido) var(--suave);
+}
+
+/* 🔴 O HOVER MUDA A TINTA, NÃO O FUNDO — e isto é divergência MEDIDA do mapa de tokens, que
+ * mandava trocar o `--chrome-hover` que estava aqui por `--trilho-hover`. Três medições contra:
+ *
+ *  1. `--trilho-hover` não tem UM leitor em todo o produto
+ *     (`grep -rn "var(--trilho-hover)" src/ --include=*.css` → vazio). Esta tela estrearia o
+ *     token, sozinha, num controle que já existe em quatro cópias iguais.
+ *  2. Os quatro segmenteds vivos fazem hover por COR: `.aba:hover` (o `config.module.css` que
+ *     esta tela já importa), `.segmento:hover` (campos), `.filtroItem:hover` (kanban) e o da
+ *     agenda. Nenhum deles pinta fundo no hover.
+ *  3. No tema ESCURO, que é o padrão, o fundo inverteria a hierarquia: `--trilho-hover` é
+ *     #26262F, mais claro que o trilho (#1F1F29) e MUITO mais claro que a opção ativa
+ *     (`--superficie`, #101016). A opção que a pessoa está só apontando gritaria mais alto que
+ *     a que está escolhida — o oposto do que este controle existe pra mostrar.
+ *
+ * 🔴 A guarda `:not(:disabled)` não é zelo, é o par obrigatório da regra de `:disabled` logo
+ * abaixo: `--tinta` é EXATAMENTE a cor da opção ativa, então sem ela apontar um segmento morto
+ * o acendia como se fosse o escolhido — o sinal saía invertido. É a mesma guarda que o `Botao`
+ * e o `Campo` põem em toda regra de `:hover`/`:active`; aqui ela é só `:not(:disabled)` porque
+ * estes três não têm o estado carregando (`aria-disabled`/`aria-busy`) que aqueles dois também
+ * precisam cobrir. */
+.opcaoTipo:hover:not(:disabled) { color: var(--tinta); }
+
+/* Foco: UM anel, o mesmo dos outros segmenteds do produto (`.aba`, `.segmento`, `.filtroItem`
+ * usam os três este mesmo par). Ele não vinha de lugar nenhum aqui: a v0.7.0 levou junto o
+ * `.acoes button:focus-visible` do `config.module.css`, e um `<button>` sem anel declarado cai
+ * no anel do NAVEGADOR — que no escuro é quase da cor da superfície. */
+.opcaoTipo:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* 🔴 FORA DE AÇÃO — e estes três são os ÚNICOS controles da tela que saem da ordem de foco.
+ * Eles levam `disabled` nativo, e devem levar: `setTipo` é `useState` puro, o `pendente` nunca
+ * nasce deles, e trocar de segmento no meio de uma gravação trocaria o formulário debaixo dela.
+ * O resto da tela congela por `readOnly` + `aria-busy`, que esmaece e CONTINUA focável — sem
+ * esta regra, os três eram os únicos que sumiam da tabulação sem nenhum sinal de que sumiram.
+ *
+ * `0.55` e `not-allowed` são os do `.raiz:disabled` do `Botao`, não um tratamento novo. */
+.opcaoTipo:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 🔴 ANINHADO NA BASE, e não `.opcaoTipoAtiva` solto: modificador aplicado sem a classe base
+ * é o defeito que nenhuma barreira pega — a classe EXISTE, então `classes-tsx` fica verde e a
+ * tela mostra um retângulo sem forma. Aninhado, esquecer a base deixa de pintar.
+ *
+ * O `:hover` entra na MESMA regra (como `.abaAtiva, .abaAtiva:hover` faz no `config.module.css`)
+ * pra que apontar a opção já escolhida não a apague. Ele deixou de ser DESEMPATE quando o hover
+ * ganhou a guarda: `.opcaoTipo:hover:not(:disabled)` conta três pseudo-classes e passou a vencer
+ * `.opcaoTipo.opcaoTipoAtiva` por especificidade, não mais por ordem de regra. Hoje os dois
+ * declaram o mesmo `--tinta`, então a vitória é invisível — e é por isso mesmo que esta metade
+ * fica: ela é o que segura a opção escolhida no dia em que a regra de hover declarar algo que a
+ * ativa não quer.
+ *
+ * A guarda vem junto pelo mesmo motivo do vizinho: a opção ativa e desabilitada continua com a
+ * cara de ativa (pela regra sem `:hover`), esmaecida pelo `:disabled`, e nada acende ao
+ * apontá-la. */
+.opcaoTipo.opcaoTipoAtiva,
+.opcaoTipo.opcaoTipoAtiva:hover:not(:disabled) {
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+  color: var(--tinta);
+}
+
+/* Os itens do custo do canal oficial. A caixa em volta é a mesma `.pendencia` — wash
+ * semântico, em que a cor É o conteúdo —, e ela é reusada de propósito: uma segunda receita
+ * idêntica com outro nome é a dívida que o `/config` já pagou uma vez. */
+.custoLista {
+  margin: var(--s-3) 0 0;
+  padding-left: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+/* Onde colar cada valor. `--tinta-3` porque é a legenda do campo copiável logo acima, e quem
+ * fica em `--tinta` é o dado. (Dizia "o que fica escuro é o dado", de quando o produto só
+ * tinha tema claro — no escuro, que hoje é o padrão, o dado é o mais CLARO dos dois.) */
+.ondeColar {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}

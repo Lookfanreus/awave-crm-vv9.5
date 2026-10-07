@@ -1,0 +1,168 @@
+/* SeletorWorkspace.module.css — seletor de workspace no TOPO DO RAIL (kit v2).
+ *
+ * Ele morava na top bar e subiu pra cá quando ela morreu: o workspace é o ESCOPO de
+ * tudo que a navegação abaixo mostra, e numa barra separada essa relação ficava invisível.
+ *
+ * 🔴 Um dos módulos que mantêm `box-shadow` (ver a barreira de sombra do kit): o menu
+ * flutua de verdade sobre o conteúdo.
+ *
+ * O GATILHO é escuro (vive no rail); o MENU segue claro. Não é inconsistência: o menu
+ * transborda pra fora do rail e pousa sobre a página branca, então ele pertence ao plano de
+ * conteúdo, como todos os outros dropdowns do produto. */
+
+.wrap {
+  position: relative;
+}
+
+/* Largura cheia: aqui ele não é um botão numa barra, é uma FAIXA do rail. `--superficie-alta` sobre
+ * o rail é a camada "item elevado" do escuro — o equivalente do branco-sobre-cinza que o
+ * lado claro usa pra dizer "isto é um controle". */
+.gatilho {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--s-3);
+  background: var(--superficie-alta);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-controle);
+  /* 🔴 A altura vem do `--h-control`, não do padding. Com `padding: var(--s-3)` ele fechava em
+   * 36,8px (8 + 18,85 de linha + 8 + 2 de borda) e o rail passava a ter TRÊS degraus de altura
+   * — 30 no item de nav, 32 no gatilho da conta lá embaixo e este. Nenhum dos três era o
+   * mesmo controle em contextos diferentes; era um número que ninguém escolheu, saindo da
+   * entrelinha do texto. `--h-control` é o token que o próprio kit reserva pra "botão", e é o
+   * que o gatilho da conta já praticava. */
+  min-height: var(--h-control);
+  padding: 0 var(--s-3);
+  font-size: var(--fs-body);
+  /* 500: nome de workspace é nome, e a escala reserva o 600 pro texto pequeno em caixa alta.
+   * O que faz este botão ser um botão é a borda e a camada elevada, não o peso. */
+  font-weight: 500;
+  color: var(--tinta-2);
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+/* `--trilho` (o topo da pilha do escuro): no escuro, hover é mais luz. */
+.gatilho:hover {
+  background: var(--trilho);
+}
+
+.gatilho:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* O anel de FORA, o mesmo de todo controle avulso do produto. Ele cabe: o gatilho é uma faixa
+ * recuada 12px da borda do rail, e o rail não tem `overflow` nenhum (ver a nota lá) — nada
+ * clipa os 4px que o anel alcança.
+ *
+ * Sem esta regra o seletor caía no anel padrão do navegador, que muda de desenho por navegador
+ * e some contra fundo escuro. `:focus-visible` e não `:focus`, senão ele acende no clique de
+ * mouse e deixa de significar "o teclado está aqui". */
+.gatilho:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.gatilho svg {
+  color: var(--tinta-3);
+  flex-shrink: 0;
+}
+
+.nome {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 🔴 ESTE abre pra BAIXO — é o do TOPO do rail. Quem inverte é o `MenuUsuario`, no pé.
+ *
+ * `left: 0` (era `right: 0`): ancorado à esquerda, ele cresce PRA DIREITA quando o nome de
+ * um workspace é longo, transbordando sobre o conteúdo. Ancorado à direita ele cresceria
+ * pra esquerda, pra fora da janela. `min-width: 100%` faz o piso ser a largura do gatilho —
+ * um menu mais estreito que o botão que o abriu lê como desalinho. */
+.menu {
+  position: absolute;
+  top: calc(100% + var(--s-2));
+  left: 0;
+  min-width: 100%;
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-2);
+  padding: var(--s-2);
+  z-index: 20;
+}
+
+/* `--tinta-3` e não `--icone-mudo`: o `--text-subtle` do v1 morreu, e quando ele carregava
+ * TEXTO o destino é a tinta (5,74:1). O cinza claro só sobrevive como linha e como ícone. */
+.rotulo {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--ls-micro);
+  line-height: var(--lh-micro);
+  text-transform: uppercase;
+  color: var(--tinta-3);
+  padding: var(--s-2) var(--s-3);
+}
+
+/* Mesma linha de menu do MenuUsuario: `--h-row` no lugar do `padding: 9px 10px`. */
+.item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-pequeno);
+  min-height: var(--h-row);
+  padding: 0 var(--s-3);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--tinta-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-rapido) var(--suave);
+}
+
+.item:hover {
+  background: var(--superficie-hover);
+}
+
+/* O anel de DENTRO, e aqui o motivo é aritmética: o `.menu` tem `padding: var(--s-2)` (4px) e
+ * uma borda de 1px, e o anel de fora alcança exatamente 4px — ele pousaria EM CIMA da borda do
+ * painel, virando um contorno do menu inteiro em vez do contorno da linha focada. Mesma
+ * decisão das linhas de lista do produto, que também sangram até a borda do bloco. */
+.item:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* Mesmo caso do `.ativo` do Rail: o peso sai e sobram três sinais independentes — cor
+ * `--acento`, fundo `--acento-wash` e o ✓ à direita. Hierarquia por cor, não por peso. */
+.itemAtivo {
+  color: var(--acento);
+  font-weight: 500;
+  background: var(--acento-wash);
+}
+
+.itemNome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check {
+  color: var(--acento);
+  flex-shrink: 0;
+}
+
+/* ⚠️ Não há mais media query aqui. O recorte de 1024px encolhia o gatilho pra 140px porque
+ * ele disputava a top bar com o menu do usuário. Ele agora mora no rail, que abaixo de
+ * 1024px vira uma gaveta de 280px — espaço de sobra, e o nome do workspace inteiro é
+ * justamente o que se quer ver ao abrir a gaveta. */

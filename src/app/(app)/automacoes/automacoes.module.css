@@ -1,0 +1,707 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+/* automacoes.module.css — /automacoes. Kit v2.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 A LISTA DE REGRAS ERA UMA PILHA ESFARRAPADA, e era ela que dava à tela a cara de
+ * formulário de 2010. Medido em 1440×900, antes:
+ *
+ *   · três alturas de linha diferentes (79 · 57 · 79px), porque a badge de "último
+ *     resultado" era uma SEGUNDA LINHA que só existia em algumas regras;
+ *   · o botão de excluir ancorado em x=1395, ~1000px à direita do nome que ele apaga;
+ *   · nada em coluna: nenhum dos quatro elementos da linha caía no mesmo x da linha de cima.
+ *
+ * Agora a linha é uma GRADE de quatro trilhas — interruptor · regra · último resultado ·
+ * excluir — e todas as linhas têm a mesma anatomia, com ou sem resultado. É a receita do
+ * linha de lista do kit (nome 13/500 `--tinta`, subtítulo 13/400 `--tinta-3`, e o dado em COLUNA de largura
+ * fixa), a mesma que o painel usa nos blocos de lista.
+ *
+ * 🔴 E A LINHA PASSOU A MOSTRAR A FORMA DA REGRA. Uma automação é "quando X → faça Y"; o
+ * subtítulo dizia "Negócio parado numa etapa · 1 ação", um `·` que não distingue causa de
+ * efeito. A seta faz a leitura em meio segundo, que é o que se pede de uma lista.
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ *
+ * 🔴 OS TRÊS PAINÉIS SÃO PAINÉIS DE VERDADE. `.gestor`, `.editor` e `.log` levam os quatro
+ * tokens da receita (`--superficie` · `--linha` · `--r-painel` · `--elev-1`) desde que a regra
+ * de contenção foi invertida — eram rótulo + filete + espaço, e o nome "painel" já estava
+ * aqui descrevendo o que eles não eram. O que MANTÉM moldura própria aqui são os controles:
+ * input, select, botão, o cartão de modelo (que é um botão de escolha) e o `.acaoItem`, que
+ * agrupa os campos de UMA ação — e por ser moldura de agrupamento é `--trilho`, não
+ * superfície: dois planos iguais aninhados somem um no outro. */
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+/* ── Aviso de disjuntor (C-2) ─────────────────────────────────────────────────── */
+
+.avisoDisjuntor {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  background: var(--aviso-wash);
+  color: var(--tinta);
+  border: 1px solid var(--aviso);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+}
+.avisoDisjuntor svg { color: var(--aviso); flex-shrink: 0; }
+
+/* ── Layout: lista + editor ───────────────────────────────────────────────────── */
+
+/* ⚠️ `--s-4` (12) e não os `--s-7` (32) de antes: os 32 eram o espaço fazendo o trabalho de
+ * separar a lista do editor quando nenhum dos dois tinha borda. */
+.layout {
+  display: grid;
+  /* 300px em vez de até 360: a lista é só nome + estado, e o que precisa de espaço é o
+   * editor ao lado. */
+  grid-template-columns: minmax(240px, 300px) 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  /* `12fr` = o corte "bloco de largura cheia" da grade de 12. Em uma trilha só o
+   * comportamento é idêntico ao `1fr` que estava aqui, mas é o vocabulário que a barreira
+   * de grade do kit conhece. */
+  .layout { grid-template-columns: 12fr; }
+}
+
+/* Sem editor aberto, a lista É a tela e ocupa a largura toda. Antes ela ficava presa em
+ * 300px ao lado de um formulário que ninguém pediu. */
+.layoutSolo {
+  display: block;
+}
+
+/* ── Tela de quem ainda não tem automação — o vazio COM SAÍDA ─────────────────── */
+
+.vazioTela {
+  padding: var(--s-7) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* 40px, o mesmo tile do `components/ui/EstadoVazio` — era 44, e dois tiles de tamanhos
+ * diferentes pro mesmo papel é como uma linguagem visual começa a se soltar. */
+.vazioIcone {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-painel);
+  background: var(--acento-wash);
+  color: var(--acento);
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--s-5);
+}
+
+/* 16/500 (`title`). Era 18/600: 18 saiu da escala e 600 ficou reservado a micro em caixa
+ * alta e cabeçalho de tabela. */
+.vazioTitulo {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.vazioTexto {
+  margin-top: var(--s-3);
+  /* Medida de leitura: linha longa demais faz o olho perder o retorno. */
+  max-width: 52ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.vazioTexto strong { color: var(--tinta-2); font-weight: 500; }
+
+.vazioModelos {
+  margin-top: var(--s-6);
+  width: 100%;
+  max-width: 860px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--s-4);
+  text-align: left;
+}
+
+/* Cartão de modelo = a ação PRINCIPAL desta tela. Ele MANTÉM moldura de propósito: é um
+ * botão de escolha, e a regra de contenção dá caixa a CONTROLE. Sem sombra no hover (no v2 a separação é
+ * por borda) — quem responde ao ponteiro é a borda e o wash do accent. */
+.vazioModelo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  background: var(--superficie);
+  text-decoration: none;
+  transition: border-color var(--t-rapido) var(--suave), background-color var(--t-rapido) var(--suave);
+}
+
+.vazioModelo:hover {
+  border-color: var(--acento);
+  background: var(--acento-wash);
+}
+
+.vazioModeloNome { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta); }
+.vazioModeloDesc { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); flex: 1; }
+
+.vazioModeloAcao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--acento);
+}
+
+.vazioDoZero {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta-3);
+  text-decoration: none;
+}
+
+.vazioDoZero:hover { color: var(--acento); }
+
+/* O anel de FORA: é a saída do estado vazio, um link de texto isolado no meio do bloco, com
+ * folga de sobra e nada que o clipe. Sem esta regra ele caía no anel padrão do navegador. */
+.vazioDoZero:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.vazioNota {
+  margin-top: var(--s-6);
+  max-width: 60ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+
+.vazioNota strong { color: var(--tinta-2); font-weight: 500; }
+
+/* A lista acompanha a rolagem do editor, que é MUITO mais alto que ela. Sem isto, quem
+ * desce pra configurar a ação perde de vista quais automações existem. */
+@media (min-width: 901px) {
+  .gestor {
+    position: sticky;
+    top: var(--s-5);
+  }
+}
+
+/* Painéis. */
+.gestor,
+.editor,
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  /* O corpo; o `.blocoTopo` traz o respiro de cima. */
+  padding: 0 var(--s-5) var(--s-5);
+}
+
+/* ── O cabeçalho de bloco: UMA receita, usada pelos três ──────────────────────────────
+ *
+ * 🔴 `min-height: var(--h-control)` É O QUE ALINHA OS DOIS CABEÇALHOS. `.gestor` embrulha o
+ * título junto de um botão de 32px enquanto `.editor` tem só um `<h2>` de 19px — os dois
+ * blocos ficam LADO A LADO, e sem a altura mínima o corpo de um começa 14px acima do do outro
+ * (medido: y=174 contra y=160). O que mudou com a caixa foi só o SINTOMA: antes eram dois
+ * filetes desencontrados, agora são dois começos de conteúdo. Mesma regra em
+ * `relatorios.module.css`.
+ *
+ * O recuo negativo devolve o cabeçalho à borda do painel — o `padding` lateral do bloco serve
+ * ao corpo. */
+.blocoTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: var(--h-control);
+  margin-inline: calc(var(--s-5) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+/* Rótulo de bloco: 13/600 `--tinta` desde que a caixa voltou. Sem caixa ele era 13/500
+ * `--tinta-2`, pra não roubar do filete o papel de "aqui começa a seção". */
+.subtitulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+/* O contador/nota à direita do rótulo — mesma receita do `.meta` do ChartCard/ListCard.
+ * "2 de 3 ligadas" no cabeçalho responde, sem contar linha nenhuma, a única pergunta que se
+ * faz numa lista de automações. */
+.meta {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ajuda { color: var(--tinta-3); font-size: var(--fs-body); line-height: var(--lh-body); margin: 0; }
+
+/* Vazio: sem caixa tracejada, sem centralizar e em `--tinta-3` (5,74:1) no lugar do
+ * `--text-subtle` de 2,58:1. */
+.vazio {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  padding: var(--s-4) 0;
+}
+
+.erro,
+.erroLista {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--erro);
+  background: var(--erro-wash);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  margin: 0;
+  list-style: none;
+}
+.erroLista li + li { margin-top: var(--s-1); }
+
+/* ── Inputs / selects / botões compartilhados ────────────────────────────────── */
+/* `max-width`: sem ele um campo de NOME ocupava os ~680px do editor. Campo largo demais
+ * atrapalha duas vezes — o olho perde a ligação entre rótulo e caixa, e a largura sugere
+ * que se espera um texto longo, quando o exemplo é "Ligar quando negócio fechar". */
+/* POSICIONAMENTO, não aparência. O `.botaoPrimario` que morava aqui trazia
+ * `align-self: flex-start` e o `.botaoSec`, `width: fit-content` — sem isso o botão estica
+ * na coluna flex e vira uma barra da largura do painel. É a mesma coisa que os dois diziam,
+ * dita uma vez. */
+.acaoLocal {
+  align-self: flex-start;
+  width: fit-content;
+}
+
+/* O "E/OU" entre condições: um `Selecao` estreito e destacado. Só o que o diferencia de um
+ * select comum mora aqui; a caixa é do componente. */
+.combinador {
+  flex: 0 0 60px;
+  font-weight: 500;
+  color: var(--acento);
+  border-color: var(--acento-linha);
+  background: var(--acento-wash);
+}
+
+.campo { display: flex; flex-direction: column; gap: var(--s-2); max-width: 520px; }
+.rotulo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta-2); }
+/* Botão só-de-ícone: `--tinta-3`, não `--icone-mudo` — não há rótulo ao lado, e o ícone
+ * decorativo é o único que pode ficar mais claro que texto. */
+/* ── Lista de automações ──────────────────────────────────────────────────────── */
+
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+/* Quatro trilhas, uma linha: interruptor · regra · último resultado · excluir.
+ *
+ * Só a regra é `1fr` — é isso que faz o estado e o botão de excluir caírem no MESMO x em
+ * toda linha. E o excluir para de morar a 1000px do nome que ele apaga.
+ *
+ * O selecionado ganha uma BARRA de 2px `--acento` (o mesmo sinal do item de nav ativo do
+ * rail); a borda transparente em repouso existe pra a seleção não deslocar a linha em 2px.
+ *
+ * `--h-row` é PISO, não altura: com nome + regra em 13/1,45 a linha assenta em ~55px, que é
+ * o pitch que o kit descreve (e ainda 14% mais denso que os ~64px do v1). */
+.item {
+  display: grid;
+  /* O TETO de 520px na trilha do nome não é estética: com `1fr` ali, a coluna de estado era
+   * empurrada pra x≈1090 enquanto a coluna RESULTADO do log logo abaixo começa em x≈893 —
+   * dois "últimos resultados" empilhados na mesma tela, a 200px um do outro. Com o teto os
+   * dois caem em x≈863 e x≈893.
+   *
+   * ⚠️ Não é alinhamento EXATO e não dá pra ser: o log é uma `<table>` de layout automático,
+   * então a coluna dele anda conforme o nome de automação mais longo. Fixar a largura das
+   * colunas da tabela pra casar os dois trocaria um desencontro de 30px por texto cortado. */
+  grid-template-columns: 36px minmax(0, 520px) minmax(0, 1fr) 26px;
+  align-items: center;
+  column-gap: var(--s-4);
+  row-gap: var(--s-2);
+  min-height: var(--h-row);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--linha);
+  transition: background-color var(--t-rapido) var(--suave);
+}
+.item:hover { background: var(--superficie-hover); }
+.itemAtivo,
+.itemAtivo:hover { border-left-color: var(--acento); background: var(--acento-wash); }
+
+.item > .switch { grid-row: 1; grid-column: 1; }
+.itemNome { grid-row: 1; grid-column: 2; }
+.item > .estado { grid-row: 1; grid-column: 3; justify-self: start; }
+.item > .remover { grid-row: 1; grid-column: 4; }
+
+/* Ao lado do editor a lista tem 300px: não cabem quatro trilhas. O último resultado desce
+ * pra uma segunda fileira, começando na trilha do NOME (2) — alinhado com ele, não com o
+ * interruptor. O excluir fica preso na primeira fileira.
+ *
+ * 🔴 TUDO ISTO SÓ VALE ACIMA DE 900px, o MESMO ponto em que o `.layout` deixa de ter duas
+ * colunas. A classe `.listaCompacta` vem de uma prop de ESTADO ("o editor está aberto"), mas
+ * o que ela resolve é LARGURA — e abaixo de 900 o editor desce pra baixo da lista, que passa
+ * a ter a largura inteira. Sem esta media query, uma lista de 884px de largura continuava
+ * empilhando o estado numa segunda fileira e escondendo a contagem de ações por um aperto
+ * que não existia mais. */
+@media (min-width: 901px) {
+  .listaCompacta .item { grid-template-columns: 36px minmax(0, 1fr) 26px; }
+  .listaCompacta .item > .estado { grid-row: 2; grid-column: 2 / -1; }
+  .listaCompacta .item > .remover { grid-row: 1; grid-column: 3; }
+
+  /* Na coluna de 300px sobram ~200px para a regra, e a linha inteira não cabe: MEDIDO, o
+   * gatilho virava "Negócio parado nu… → 1 ação" — a metade que identifica a regra cortada
+   * para caber a metade que não identifica. A contagem de ações sai e o gatilho fica
+   * inteiro. Ela volta assim que a lista tem largura. */
+  .listaCompacta .itemSeta,
+  .listaCompacta .itemAcoes { display: none; }
+}
+
+.itemNome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+.itemLabel {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A REGRA, escrita como regra. Mesmo tamanho do nome (13): "secundário" é COR, não mais um
+ * passo de tamanho. A seta é `--icone-mudo` porque ela é pontuação gráfica com texto dos dois
+ * lados — a única condição em que o token é permitido.
+ *
+ * 🔴 …e por isso ela é um ÍCONE de verdade, não o caractere `→`. Enquanto era caractere, o
+ * elemento era TEXTO com cor de token de ícone: piso 4,5 pintado com uma cor cujo piso é 3.
+ * Medido no claro: 4,10 sobre `--fundo`. Quem estava errado era o elemento, não o token. */
+.itemRegra {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+}
+.itemGatilho,
+.itemAcoes {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.itemGatilho { flex: 0 1 auto; }
+/* `align-self: center` porque o pai alinha por BASELINE: um SVG assentado na linha de base
+ * fica pendurado no pé do texto em vez de apontar do meio de uma frase pra outra. */
+.itemSeta { color: var(--icone-mudo); flex-shrink: 0; align-self: center; }
+.itemAcoes { flex: 0 0 auto; }
+
+/* Switch liga/desliga. O trilho desligado é `--icone-mudo` e não `--linha-forte`: sem sombra no
+ * polegar (não há sombra decorativa), um polegar branco sobre `--linha-forte` daria 1,62:1 e o
+ * controle sumiria. Com `--icone-mudo` o polegar tem 4,38:1 desligado e 5,13:1 ligado, e o par
+ * cinza-escuro/colorido segue lendo como desligado/ligado. */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--icone-mudo);
+  cursor: pointer;
+  transition: background var(--t-rapido) var(--suave);
+}
+.switch[data-on='true'] { background: var(--acento); }
+.switch:disabled { opacity: 0.5; cursor: not-allowed; }
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-pill);
+  /* `--polegar` (branco nos DOIS temas), nunca `--superficie`: no escuro ela é `#101016`, mais
+   * escura que o trilho nos dois estados, e o polegar lia como FURO no trilho em vez de peça
+   * deslizando. A peça que se move tem que ser a mais clara do controle. */
+  background: var(--polegar);
+  /* `--mola` e não `--suave`: o thumb do switch é o único objeto aqui que se DESLOCA, e a
+   * chegada firme na outra ponta é o que faz o controle parecer que engatou. */
+  transition: transform var(--t-rapido) var(--mola);
+}
+.switch[data-on='true'] .switchThumb { transform: translateX(16px); }
+
+/* ── Estado de execução: PONTO + TEXTO, não pílula ────────────────────────────────────
+ *
+ * 🔴 ERA UMA PÍLULA COM WASH, e num log ela é a forma errada: o texto de resultado varia de
+ * "Executada — 1 ação" a uma frase de erro inteira, então a pílula virava uma LAJE rosa de
+ * ~400px atravessando a célula (medido). Pílula é a forma que o kit reserva pra rótulo
+ * curto e fechado (é a silhueta do badge de contagem); um resultado é uma FRASE.
+ *
+ * O ponto de 6px é a dose que o kit autoriza pra cor como dado, e ele carrega o estado
+ * sozinho. O texto fica em `--tinta-2` nos quatro tons: uma frase inteira em vermelho ou verde
+ * gritaria mais alto que o NOME da automação ao lado, que é o dado principal da linha. */
+.estado {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+.estadoPonto {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  /* Desce da linha de base do texto pro meio da altura-x, senão o disco fica pendurado no
+   * pé da primeira linha quando a frase quebra em duas. */
+  transform: translateY(-3px);
+}
+
+.tom_ok .estadoPonto { background: var(--ok); }
+.tom_erro .estadoPonto { background: var(--erro); }
+.tom_neutro .estadoPonto,
+.tom_pendente .estadoPonto { background: var(--icone-mudo); }
+
+/* ── "Começar a partir de" — templates de regra (T17) ─────────────────────────── */
+
+.rotuloIcone { display: inline-flex; align-items: center; gap: var(--s-2); }
+.rotuloIcone svg { color: var(--acento); }
+
+/* 🔴 O RÓTULO VINHA DEPOIS DO FILETE nos blocos internos do editor — `border-top` no
+ * container e o rótulo logo abaixo dele. É o oposto da anatomia do bloco sem caixa (rótulo, filete,
+ * conteúdo) que o resto do produto usa, e no meio de um formulário o efeito é concreto: a
+ * régua parecia fechar a seção ANTERIOR, então "E se (opcional)" lia como legenda do campo
+ * de cima. Agora os três blocos internos usam a mesma ordem do resto.
+ *
+ * Em `micro` CAIXA ALTA, e não 13/500: o cabeçalho do bloco inteiro ("Nova automação") já é
+ * 13/500 `--tinta-2`; repetir esse registro aqui achataria os dois níveis num só. O 11px em
+ * caixa alta é exatamente o papel "rótulo de estrutura" que a escala lhe reserva. */
+.rotuloSecao {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--tinta-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+}
+
+.blocoTemplates,
+.blocoCondicao,
+.blocoAcoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+/* auto-fit em vez de 3 colunas fixas: no editor estreito (layout de 2 colunas em telas
+ * médias) os cartões empilham sozinhos, sem media query própria. */
+.templateGrade {
+  display: grid;
+  /* 240 e não 200: a 200px os três modelos entravam lado a lado no editor e o título
+   * quebrava no meio da frase ("Lead parado há 3 dias avisa a / IA"). */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--s-3);
+}
+
+/* Também é controle (botão de escolha) → mantém moldura, e o fundo dela é `--superficie`, o
+ * mesmo plano dos painéis: o `--surface-muted` do v1 (o cinza de poço) lia como desabilitado.
+ * Poço é `--trilho`, e controle habilitado nunca vai de poço. */
+.templateCartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-controle);
+  background: var(--superficie);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--t-rapido) var(--suave), background-color var(--t-rapido) var(--suave);
+}
+.templateCartao:hover:not(:disabled) { border-color: var(--acento); background: var(--superficie-hover); }
+.templateCartao:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Selecionado = o mesmo wash do item ativo da lista — um azul só. */
+.templateCartaoAtivo,
+.templateCartaoAtivo:hover:not(:disabled) {
+  border-color: var(--acento);
+  background: var(--acento-wash);
+}
+
+.templateNome { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta); }
+.templateDesc { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); }
+
+/* Nota do que o modelo NÃO pôde preencher. Informativa, não alarme — daí o wash do accent,
+ * e não o `--aviso-wash` do banner de disjuntor (que é status de execução). */
+.notaTemplate {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--acento-linha);
+  border-radius: var(--r-controle);
+  background: var(--acento-wash);
+}
+.notaTemplate > svg { color: var(--acento); flex-shrink: 0; margin-top: 1px; }
+.notaTemplateCorpo { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.notaTemplateTitulo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta); }
+.notaTemplateLista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.notaTemplateLista li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.notaTemplateCampo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta); }
+.notaTemplateTexto { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); flex: 1 1 100%; margin: 0; }
+
+.pendenciaTag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.pendenciaObrigatoria { background: var(--aviso-wash); color: var(--aviso); }
+.pendenciaRecomendada { background: var(--trilho); color: var(--tinta-3); }
+
+/* ── Editor de regra ──────────────────────────────────────────────────────────── */
+
+/* `6fr 6fr` e `4fr 4fr 4fr`: os cortes de "dois iguais" e "três iguais" da grade de 12
+ * O `1fr 1fr` e o `1.2fr 1fr 1fr` que estavam aqui não são trilhas da grade — o
+ * segundo nem soma 12. */
+.linhaDupla { display: grid; grid-template-columns: 6fr 6fr; gap: var(--s-3); }
+.linhaTripla { display: grid; grid-template-columns: 4fr 4fr 4fr; gap: var(--s-3); }
+@media (max-width: 560px) {
+  .linhaDupla,
+  .linhaTripla { grid-template-columns: 12fr; }
+}
+
+.linhaCondicao { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+/* LAYOUT, não aparência (ver a nota igual no relatorios.module.css). */
+.linhaCondicao select,
+.linhaCondicao input { flex: 1 1 140px; min-width: 0; }
+.acaoLista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+/* Moldura de AGRUPAMENTO dentro do formulário (uma ação = vários campos que andam juntos),
+ * por isso `--trilho` e não branco: no kit v2 cinza significa "não é conteúdo, é moldura". Os
+ * campos dentro dela continuam brancos.
+ *
+ * `--r-controle` (6) e não `--r-pequeno` (4): o raio de fora tem que ser >= o de dentro, senão
+ * o canto do `<select>` encosta no canto do agrupador e a curva lê como defeito. */
+.acaoItem {
+  border: 1px solid var(--linha);
+  border-radius: var(--r-controle);
+  padding: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background: var(--trilho);
+}
+.acaoTopo { display: flex; align-items: center; gap: var(--s-2); }
+.acaoOrdem {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  background: var(--acento-wash);
+  color: var(--acento);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Só a largura. O `background` que morava aqui era redundante com a caixa do `Selecao`. */
+.acaoTopo select { flex: 1 1 auto; min-width: 0; }
+.acaoMover { display: flex; flex-direction: column; flex-shrink: 0; }
+/* 🔴 Aqui moravam `.acaoMover button`, `:hover` e `:disabled` — seletor DESCENDENTE sobre
+ * `<button>` nu. Elas tinham que sair junto com a migração, e não por higiene: o `Botao`
+ * renderiza um `<button>` DE VERDADE, então o seletor continuaria casando e brigaria com o
+ * componente por especificidade. Seletor descendente não sabe que o filho virou componente. */
+.acaoConfig > * { width: 100%; }
+.acaoNota { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); margin: 0; }
+
+/* ── Log de execuções ─────────────────────────────────────────────────────────── */
+
+.tabelaWrap { overflow-x: auto; }
+.tabela { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+/* Cabeçalho de tabela: a SEGUNDA (e última) exceção que a escala dá ao peso 600. Sai do
+ * `--text-subtle` de 2,58:1 pro `--tinta-3`. */
+.tabela th {
+  text-align: left;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-micro);
+  color: var(--tinta-3);
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--linha);
+  white-space: nowrap;
+}
+.tabela td {
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+  color: var(--tinta-2);
+  vertical-align: middle;
+}
+/* A faixa de hover percorre a linha inteira — num log de 20 linhas com quatro colunas, é o
+ * que mantém o olho na mesma execução da esquerda até a direita. */
+.tabela tbody tr { transition: background-color var(--t-rapido) var(--suave); }
+.tabela tbody tr:hover { background: var(--superficie-hover); }
+.tdMuted { color: var(--tinta-3); white-space: nowrap; }
+.linkNegocio { color: var(--acento); text-decoration: none; font-weight: 500; }
+.linkNegocio:hover { text-decoration: underline; }
+
+.paginacao { display: flex; justify-content: space-between; align-items: center; padding-top: var(--s-3); }
+
+/* ── Foco: UM anel, em tudo ──────────────────────────────────────────────────────
+ * `outline` e não `box-shadow`: desenha FORA da caixa, não muda o layout e sobrevive ao
+ * modo de alto contraste do Windows. O halo de 4px do v1 era sombra fingindo foco — e não
+ * passa na barreira de sombra do kit. */
+.switch:focus-visible,
+.templateCartao:focus-visible,
+.vazioModelo:focus-visible,
+.itemNome:focus-visible,
+.linkNegocio:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

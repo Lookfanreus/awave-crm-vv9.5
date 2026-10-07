@@ -1,0 +1,568 @@
+/* ⚠️ Cabeçalho de página vive em `@/components/ui/CabecalhoPagina` desde 2026-08-05.
+ * As regras locais (.titulo/.intro/.pagehead/.listaTitulo) foram removidas daqui: as 12
+ * telas do app usavam TRÊS tratamentos diferentes pro mesmo elemento (22/600, 24/600 e
+ * 24/500), com o subtítulo ora a 4px do título ora a 20. Não recrie um local. */
+/* relatorios.module.css — /relatorios e /relatorios/[id]. Kit v2.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 OS GRÁFICOS ERAM O PROBLEMA, e a queixa do dono foi literal: *"nenhum gráfico é
+ * moderno"*. A rodada anterior repintou este arquivo com os tokens do v2 e parou aí — o que ficou
+ * foi uma tela com a paleta certa e o VOCABULÁRIO velho:
+ *
+ *   · barras de 22px com raio de pílula sobre um trilho de pílula = a barra de progresso
+ *     de 2010. Uma pílula gorda promete "carregando"; um funil não carrega nada.
+ *   · TODAS as barras no mesmo `--acento`, contrariando a regra da cor de dado: funil é
+ *     SEQUÊNCIA, e sequência se expressa por posição e intensidade — uma rampa monocromática
+ *     pelo índice da etapa. O funil do PAINEL já fazia isso (`lib/rampa.ts`),
+ *     então o mesmo objeto tinha duas aparências no mesmo produto.
+ *   · sem piso de comprimento: `Mediana 0,1 dias` desenhava 1px ao lado de um número
+ *     escrito. Ver `src/lib/barra-grafico.ts` — é o mesmo conserto que o painel já tinha.
+ *   · nada em coluna: nome, barra e valor flutuavam no fluxo, e o `n = 6` era uma PÍLULA
+ *     cinza solta na borda direita, 700px longe da barra que ela qualifica.
+ *
+ * O que entrou no lugar é o vocabulário do funil do painel, ao pé da letra: trilha de nome
+ * fixa · barra elástica de 8px · valor em coluna alinhada à direita. Os dois funis do
+ * produto passam a ser o mesmo objeto. Se mexer aqui, olhe `painel.module.css` (.linhaEtapa)
+ * antes — divergir é o que fez a tela parecer de outro app.
+ * ══════════════════════════════════════════════════════════════════════════════════════
+ *
+ * 🔴 OS BLOCOS SÃO PAINÉIS: `.gestor`, `.construtor` e `.resultado` levam os quatro tokens da
+ * receita (`--superficie` · `--linha` · `--r-painel` · `--elev-1`). Eram rótulo + filete +
+ * espaço, pela regra de contenção antiga, que foi invertida no `globals.css`.
+ * Espelha `automacoes.module.css`; se mexer num, mexa no outro. */
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+/* ── Layout: salvos + construtor/resultado ───────────────────────────────────── */
+
+/* ⚠️ `--s-4` (12) e não os `--s-7` (32) de antes: os 32 eram o espaço fazendo o trabalho de
+ * separar a lista de salvos do construtor quando nenhum dos dois tinha borda. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  /* `12fr` = o corte "bloco de largura cheia" da grade de 12, que é o vocabulário da
+   * barreira de grade do kit. Comportamento idêntico ao `1fr` anterior. */
+  .layout { grid-template-columns: 12fr; }
+}
+
+.coluna { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+
+/* Painéis. */
+.gestor,
+.construtor,
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-painel);
+  box-shadow: var(--elev-1);
+  /* O corpo; o `.blocoTopo` traz o respiro de cima. */
+  padding: 0 var(--s-5) var(--s-5);
+}
+
+/* ── O cabeçalho de bloco: UMA receita, usada por todos ───────────────────────────────
+ *
+ * 🔴 O `.construtor` NÃO TINHA CABEÇALHO NENHUM. A regra `.construtor > .subtitulo` existia
+ * neste arquivo desde a rodada anterior, mas o `Construtor.tsx` nunca emitiu um `.subtitulo` — ou
+ * seja, era código morto, e a coluna da direita começava numa fileira de `<select>`s soltos
+ * enquanto a da esquerda tinha rótulo. Com painel a falta dói menos (a borda diz onde a seção
+ * começa) mas continua errada: um painel sem nome é uma caixa de controles sem manchete.
+ *
+ * `min-height: var(--h-control)` é o que garante que dois blocos LADO A LADO comecem o corpo
+ * no MESMO y mesmo quando um deles carrega um botão de 32px no cabeçalho e o outro só tem uma
+ * linha de texto de 19px. Mesma regra em `automacoes.module.css`.
+ *
+ * O recuo negativo devolve o cabeçalho à borda do painel — o `padding` lateral do bloco serve
+ * ao corpo. */
+.blocoTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: var(--h-control);
+  margin-inline: calc(var(--s-5) * -1);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+
+/* Rótulo de bloco: 13/600 `--tinta` desde que a caixa voltou. Sem caixa ele era 13/500
+ * `--tinta-2` de propósito — num produto de dados o que fica escuro é o DADO, e um rótulo
+ * escuro roubava do filete o papel de marcar o começo da seção. Com a borda marcando, ele
+ * volta a ser o nome do painel. */
+.subtitulo {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+
+/* O contador/contexto à direita do rótulo — mesma receita do `.meta` do ChartCard/ListCard.
+ * Um cabeçalho que só nomeia faz o leitor contar as linhas pra saber quantas são. */
+.meta {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Vazio: sem caixa tracejada, sem centralizar, e em `--tinta-3` (5,74:1) no lugar do
+ * `--text-subtle` de 2,58:1 — quem lê o estado vazio é quem ainda não entendeu a tela.
+ * O vazio COMPOSTO (ícone + título + saída) é o `components/ui/EstadoVazio`; o que sobra
+ * aqui é a linha solta de aviso. */
+.vazio {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  padding: var(--s-4) 0;
+  margin: 0;
+}
+.vazioLateral { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); margin: 0; }
+
+.erro {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--erro);
+  background: var(--erro-wash);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  margin: 0;
+}
+
+/* ── Construtor ──────────────────────────────────────────────────────────────── */
+
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s-4);
+}
+
+.campo { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.rotulo { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta-2); }
+
+/* Campo BRANCO com borda `--linha-forte`: sobre página branca, campo cinza lê como
+ * desabilitado. */
+/* 🔴 A FILA DE AÇÕES ERA UMA FILEIRA SÓ, e ela emparelhava coisas de naturezas diferentes:
+ * "Ver resultado" (rodar a pergunta) vinha colado num campo de NOME que pertence a "Salvar",
+ * e "Exportar CSV" fechava a fila como se fosse do mesmo grupo. Lendo da esquerda pra
+ * direita, o campo de nome parecia ser argumento do botão azul à esquerda dele.
+ *
+ * Agora são dois grupos com a intenção separada por espaço: RODAR à esquerda; GUARDAR e
+ * LEVAR EMBORA à direita (`.acoesGuardar` com `margin-left: auto`). O filete de cima fecha
+ * os filtros — é o pé do bloco, não um segundo cabeçalho. */
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--linha);
+}
+
+/* 🔴 `flex: 1 1 320px` e NÃO `margin-left: auto` com media query, e a diferença foi medida:
+ * o grupo da direita mora numa COLUNA de ~815px dentro de uma janela de 1440, então uma
+ * media query de viewport decide errado — a 1440 ela não dispara e o grupo quebrava assim
+ * mesmo, com "Exportar CSV" pendurado sozinho numa segunda fileira, formando um L no canto.
+ * Com `flex-grow`, quem decide é o espaço que sobrou NA LINHA: sobrando, o grupo se estica e
+ * os três cabem; faltando (a base de 320px não entra), ele desce inteiro pra própria fileira.
+ * Container, não viewport. */
+.acoesGuardar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-3);
+  flex: 1 1 320px;
+  min-width: 0;
+}
+/* O campo de nome absorve a folga e encolhe antes dos botões: um input espremido continua
+ * digitável, um botão espremido perde o rótulo. */
+/* LAYOUT, não aparência: só como o campo se comporta NESTA linha. A caixa (fundo, borda,
+ * raio, tipografia, anel) é do `Entrada`. Seletor de elemento porque o controle não carrega
+ * mais classe própria — e é seguro porque nenhuma destas propriedades disputa com o
+ * componente. */
+.acoesGuardar input { flex: 1 1 180px; min-width: 0; }
+/* Botão só-de-ícone: `--tinta-3`, não `--icone-mudo` — não há rótulo ao lado, e o token mais
+ * claro é só pro ícone decorativo. */
+/* ── Lista de salvos ─────────────────────────────────────────────────────────── */
+
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+/* Divisor `--linha` entre linhas em vez de caixinha por item; o selecionado ganha a BARRA de
+ * 2px `--acento` (mesmo sinal do item de nav ativo). A borda transparente em repouso existe
+ * pra a seleção não deslocar a linha.
+ *
+ * 🔴 `--r-controle` no ITEM, não só no selecionado: sem ele o realce de hover e o de seleção
+ * eram RETÂNGULOS de canto vivo encostando no recuo interno do painel, num produto em que todo
+ * o resto tem raio. O item de nav do rail — que esta lista já copia de propósito, barra de 2px
+ * inclusive — sempre teve o raio; era o único dos quatro sinais que não tinha sido copiado. */
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--h-row);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--linha);
+  border-radius: var(--r-controle);
+  transition: background-color var(--t-rapido) var(--suave);
+}
+.item:hover { background: var(--superficie-hover); }
+.itemAtivo,
+.itemAtivo:hover { border-left-color: var(--acento); background: var(--acento-wash); }
+
+.itemNome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+  flex: 1 1 auto;
+  text-decoration: none;
+  color: inherit;
+}
+.itemTopo { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.itemTopo > svg { color: var(--icone-mudo); flex-shrink: 0; }
+/* Selecionado: o ícone acompanha a barra. Fora da seleção ele é decorativo (o nome ao lado
+ * já diz tudo) e por isso vive em `--icone-mudo`, que só vale com rótulo ao lado. */
+.itemAtivo .itemTopo > svg { color: var(--acento); }
+.itemLabel {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Recuo de `--s-6` (24) = ícone de 16 + o gap de 8 do `.itemTopo`: o subtítulo alinha com o
+ * NOME, não com o ícone. */
+.itemSub {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  white-space: nowrap;
+  padding-left: var(--s-6);
+}
+
+/* ── Resultado: faixas e rodapé ──────────────────────────────────────────────────────
+ * ⚠️ O `.contexto` ("Funil de vendas · todo o período") saiu: ele era um `.meta` com outro
+ * nome e outra receita, no mesmo lugar da tela. Agora o cabeçalho do resultado é o mesmo
+ * `.blocoTopo` + `.meta` dos outros três blocos. */
+
+.faixaAviso,
+.faixaInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  border-radius: var(--r-controle);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  margin: 0;
+}
+.faixaAviso { background: var(--aviso-wash); border: 1px solid var(--aviso); color: var(--tinta); }
+.faixaAviso > svg { color: var(--aviso); flex-shrink: 0; margin-top: 1px; }
+.faixaInfo { background: var(--acento-wash); border: 1px solid var(--acento-linha); color: var(--tinta); }
+.faixaInfo > svg { color: var(--acento); flex-shrink: 0; margin-top: 1px; }
+
+.rodape {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  margin: 0;
+}
+/* `--icone-mudo` porque AQUI o ícone tem rótulo colado (a frase inteira ao lado). É a única
+ * condição em que ele é permitido. */
+.rodape > svg { color: var(--icone-mudo); flex-shrink: 0; margin-top: 2px; }
+
+/* ══ GRÁFICOS ═══════════════════════════════════════════════════════════════════════════
+ *
+ * O trilho e a barra são compartilhados pelos TRÊS gráficos da tela (funil, tempo por etapa
+ * e a barra dentro da célula do pivot). Uma receita só — três receitas ligeiramente
+ * diferentes é o que fazia a tela parecer montada por três pessoas.
+ *
+ * O trilho é `--trilho`, o token do que é CALHA (poço de kanban, trilho de segmented). Ele
+ * precisa ser visível: é o comprimento total que transforma barras soltas em barras
+ * COMPARÁVEIS. Sem ele, uma barra curta não tem contra o que ser curta.
+ *
+ * 8px e não os 22 de antes. Vinte e dois pixels com raio de pílula é a silhueta de uma barra
+ * de progresso; oito é uma RÉGUA DE COMPRIMENTO, que é o que um funil precisa. É a mesma
+ * altura do funil do painel. */
+.trilho {
+  display: block;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--trilho);
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* A medida SECUNDÁRIA (a mediana, que divide a linha com a média) fica na metade da altura,
+ * no MESMO azul.
+ *
+ * 🔴 Antes ela era `--acento-linha` na altura cheia, e isso não funcionava: #C2CBFF sobre o
+ * trilho `--trilho` dá ~1,35:1 — com o piso de 2%, a barra de mediana curta ficava com 13px
+ * de uma cor que mal se distingue do trilho, ou seja, invisível de novo, agora por tinta em
+ * vez de por tamanho. Intensidade por GEOMETRIA (metade da espessura) resolve sem gastar
+ * matiz nenhum, que é a mesma lógica da rampa do funil ("sequência se expressa por posição e
+ * intensidade, não por matiz") aplicada a uma comparação de duas estimativas. Quem diz qual
+ * é qual continua sendo o rótulo escrito ao lado. */
+.trilhoFino {
+  display: block;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--trilho);
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* A largura final vem inline do React — é DADO, não estilo. A cor também, no funil (rampa
+ * por índice); nos demais gráficos vale o `--acento` daqui.
+ *
+ * A animação é CSS PURO, sem `requestAnimationFrame`: o keyframe só declara o `from`, e o
+ * `to` implícito é a largura que o elemento já tem. Dois motivos —
+ * (1) o bloco global de `prefers-reduced-motion` alcança CSS e NÃO alcança laço em JS: com
+ *     duração de .01ms e atraso zerado, a barra aparece no tamanho final, sem esperar;
+ * (2) `backwards` (e não `forwards`) porque o estado a preservar é o de ANTES: durante o
+ *     atraso do escalonamento a barra fica em 0; terminada a animação ela volta pra largura
+ *     do próprio elemento, que já é a certa.
+ *
+ * ✅ A duplicata FOI resolvida: a animação virou `mov.cresce` em
+ * `src/app/movimento.module.css`, composta no `.tsx`. O que sobra aqui é só a aparência da
+ * barra — cor, altura e raio —, que é o que de fato difere entre os dois funis. */
+.barra {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--acento);
+}
+
+/* ── Funil de conversão ──────────────────────────────────────────────────────── */
+
+.funil { list-style: none; margin: 0; padding: 0; }
+
+/* As quatro trilhas: nome fixo · barra elástica · valor fixo · unidade fixa. Só a barra é
+ * `1fr` — é isso que faz TODOS os números caírem no mesmo x. Com o valor no fluxo (como
+ * estava), cada linha terminava num lugar diferente e comparar etapas virava leitura de
+ * números soltos.
+ *
+ * A taxa de conversão entra como uma SEGUNDA LINHA da mesma grade, começando na trilha 2 —
+ * ou seja, alinhada com o início da barra. Ela descreve a passagem ENTRE duas barras, então
+ * o lugar dela é a calha entre elas, não uma linha de largura cheia com um chevron solto na
+ * margem esquerda (que era o que fazia o funil ler como uma pilha de itens sem relação). */
+.funilEtapa {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr) 44px 34px;
+  align-items: center;
+  column-gap: var(--s-4);
+  row-gap: var(--s-2);
+  padding: var(--s-2) 0;
+}
+
+.funilNome {
+  grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-2);
+}
+
+.funilValor {
+  grid-column: 3;
+  text-align: right;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A unidade em `micro` `--tinta-3`: ela se repete em toda linha, então não pode ter o mesmo
+ * peso do número, que é o que muda. */
+.funilUnidade {
+  grid-column: 4;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--tinta-3);
+}
+
+/* `2 / -1` = da trilha da barra até o fim. Sem número mágico de recuo — e sem `padding-left`
+ * fora da escala de 4px, que a barreira `escala.spec.ts` reprovaria com razão. */
+.funilQueda {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  font-variant-numeric: tabular-nums;
+}
+.funilQueda > svg { color: var(--icone-mudo); flex-shrink: 0; }
+/* A porcentagem é o dado; o resto da frase é contexto. Em `--tinta` ela é a única coisa que o
+ * olho pega ao varrer a coluna de quedas de cima a baixo. */
+.funilQueda b { color: var(--tinta); font-weight: 500; }
+
+@media (max-width: 560px) {
+  /* A unidade sai antes do número: "neg." é legenda, o número é o dado. */
+  .funilEtapa { grid-template-columns: 96px minmax(0, 1fr) 44px; }
+  .funilUnidade { display: none; }
+}
+
+/* ── Tempo por etapa ─────────────────────────────────────────────────────────── */
+
+/* `--s-6` (24) entre etapas: dentro de uma etapa as três linhas ficam a ~23px uma da outra,
+ * então 16px entre etapas não separava grupo nenhum — as quinze linhas liam como uma pilha
+ * só. É o espaço fazendo o trabalho que a caixa fazia. */
+.tempoLista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-6); }
+.tempoItem { display: flex; flex-direction: column; gap: var(--s-2); }
+
+/* Nome da etapa + tamanho da amostra. `baseline` porque os dois são texto de tamanhos
+ * diferentes (13 e 11) e alinhá-los pelo centro deixaria o `n =` boiando. */
+.tempoTopo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.tempoNome { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--tinta); }
+
+/* 🔴 ERA UMA PÍLULA CINZA ancorada na borda direita do bloco, ~700px longe das barras que
+ * ela qualifica — e pílula é a forma que o kit reserva pra ESTADO (é a silhueta do badge de
+ * contagem), não pra nota de rodapé de uma medida. Aqui é micro em caixa alta, colado no
+ * nome da etapa: "média de 2 é palpite, de 200 é dado" continua dito, sem ganhar a silhueta
+ * de um alerta. */
+/* ⚠️ SEM `text-transform: uppercase`, e não é descuido de estilo: em caixa alta o rótulo
+ * vira "N = 6", e `N` maiúsculo é a POPULAÇÃO enquanto `n` minúsculo é a AMOSTRA. Aqui é
+ * amostra. A forma micro/caixa-alta usada nos outros rótulos de estrutura mudaria o que a
+ * linha afirma. Ele se distingue por cor e por posição (a direita do cabeçalho da etapa,
+ * onde vive todo `.meta` do produto). */
+.amostra {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--tinta-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Três trilhas: rótulo da medida · barra · valor. O rótulo é curto e fixo ("Média",
+ * "Mediana"), então 72px bastam e sobra largura pra barra — que é quem carrega a comparação. */
+.medida {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 84px;
+  align-items: center;
+  column-gap: var(--s-4);
+}
+.medidaRotulo { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--tinta-3); }
+.medidaValor {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 500;
+  color: var(--tinta);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .medida { grid-template-columns: 60px minmax(0, 1fr) 72px; }
+}
+
+/* ── Forecast ────────────────────────────────────────────────────────────────── */
+
+/* 🔴 ERA UM NÚMERO SOZINHO numa coluna de 815px, com o resto do relatório escrito em prosa
+ * cinza embaixo ("N negócios considerados"). Agora é a FAIXA de KPI do kit, a mesma do
+ * painel: colunas de anatomia idêntica separadas por filete vertical. O "considerados" já
+ * era um número — ele só estava escrito como frase.
+ *
+ * `repeat(2, minmax(0, 1fr))` e não `6fr 6fr`: `6fr` é `minmax(auto, 6fr)`, e esse `auto`
+ * deixa o min-content da coluna (o valor em 30px, sem quebra) virar piso de largura — foi
+ * ele que estourou a página pra fora da tela no celular, no painel. Mesma correção aqui. */
+.faixaKpi {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+/* ⚠️ Os filetes divisores saíram, pelo mesmo motivo que saíram da `.faixaKpi` do painel: quem
+ * mora nesta grade é o `KpiCard`, que desenha a própria caixa desde a inversão da regra de
+ * contenção. Filete entre duas bordas é uma terceira linha na mesma calha.
+ *
+ * 🔴 Isto AQUI é um painel DENTRO de outro (`.resultado`), e é a exceção que a regra prevê: o
+ * `KpiCard` é `--superficie` sobre `--superficie`, então no claro ele desaparece contra o pai.
+ * O que o separa é a borda + a sombra — no escuro a superfície ainda ajuda, no claro não. Se
+ * um dia isto ficar ilegível, o caminho é o do kanban: descer o filho pra
+ * `--superficie-alta`, não devolver os filetes. */
+
+@media (max-width: 560px) {
+  .faixaKpi { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 🔴 NÃO HÁ `.kpi`/`.kpiRotulo`/`.kpiValor` AQUI. Eles existiam e eram uma CÓPIA do
+ * `components/ui/KpiCard` — a mesma anatomia (rótulo micro caixa alta, valor 30/500, nota
+ * 13) reescrita num segundo arquivo. Duas cópias divergem: basta a faixa do painel ser
+ * recalibrada uma vez pra o KPI do forecast ficar com outro tamanho, e ninguém percebe,
+ * porque as duas telas não são vistas lado a lado. O `Resultado.tsx` usa o componente. */
+
+/* ── Tabela (pivot) ──────────────────────────────────────────────────────────── */
+
+.tabelaWrap { overflow-x: auto; }
+.tabela { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+/* Cabeçalho de tabela: a SEGUNDA (e última) exceção que a escala dá ao peso 600. */
+.tabela th {
+  text-align: left;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-micro);
+  color: var(--tinta-3);
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--linha);
+  white-space: nowrap;
+}
+.tabela td {
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--linha);
+  color: var(--tinta-2);
+  vertical-align: middle;
+}
+.tabela tbody tr { transition: background-color var(--t-rapido) var(--suave); }
+.tabela tbody tr:hover { background: var(--superficie-hover); }
+
+/* 🔴 `.tabela th.tdNum` e não só `.tdNum`, e ISTO ERA UM BUG VISÍVEL: `.tabela th`
+ * (especificidade 0,1,1) ganhava de `.tdNum` (0,1,0), então os cabeçalhos "NEGÓCIOS" e
+ * "SOMA" ficavam à ESQUERDA enquanto as células deles ficavam à direita — medido em
+ * 1440×900, o rótulo em x=880 e o número em x=1088, 200px de distância entre um cabeçalho e
+ * a coluna que ele nomeia. O `.tdNum` já estava escrito no `<th>` desde que a tela nasceu; ele
+ * simplesmente nunca teve efeito. */
+.tdNum,
+.tabela th.tdNum { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rotuloVazio { color: var(--tinta-3); font-style: italic; }
+
+/* A barra dentro da célula do rótulo mede a CONTAGEM (a coluna ao lado), não a soma. 4px:
+ * dentro de uma célula de tabela ela é uma anotação da linha, não um gráfico por si. */
+.barraCelula { margin-top: var(--s-2); max-width: 240px; }
+
+/* ── Foco: UM anel, em tudo ─────────────────────────────────────────────────── */
+.itemNome:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

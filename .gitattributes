@@ -1,0 +1,22 @@
+# A fundação vendored é comparada byte-a-byte contra o Motor. Sem conversão de EOL.
+platform/** -text
+migrate.mjs -text
+
+# 🔴 Fonte é BINÁRIO, e esta linha nasceu junto com o PRIMEIRO arquivo binário versionado
+# aqui. Sem ela quem decide se o arquivo é texto é a heurística do git — e numa máquina com
+# `core.autocrlf=true` (o padrão do Windows) um palpite errado reescreve todo `0A` como
+# `0D 0A` no CHECKOUT, o que corrompe a fonte e derruba o `@font-face`.
+#
+# O estrago seria MUDO, e é por isso que a regra entra junto com o binário e não depois: a
+# conferência de integridade da atualização compara o BLOB COMMITADO, não os bytes em disco.
+# Uma fonte estragada no checkout casa o hash do mesmo jeito, nada acusa, e o sintoma chega
+# na tela como texto desenhado na fonte do sistema.
+*.woff2 binary
+
+# 🔴 O entrypoint roda em `/bin/sh` (dash) dentro do container, e dash NÃO aceita CRLF: o
+# `\r` vira parte da opção e o boot morre em `set: Illegal option -`, em loop de restart,
+# antes de qualquer migration. O blob no repositório é LF, mas numa máquina com
+# `core.autocrlf=true` (o padrão do Windows) o CHECKOUT reescreve pra CRLF — e aí um
+# `docker build` local a partir do working tree gera um container que não sobe. Travar em LF
+# aqui vale para o checkout, não só para o commit.
+*.sh text eol=lf
