@@ -1,6 +1,6 @@
 # Awave CRM
 
-CRM completo que roda **no seu servidor**, contra o **seu** banco de dados. Contatos,
+CRM completo que roda **no seu servidor**, com o **seu** banco de dados. Contatos,
 empresas, negócios num quadro de arrastar e soltar, atividades e agenda, campos criados por
 você, automações, relatórios e uma **caixa de entrada de WhatsApp e de mensagens diretas do
 Instagram** — com vários espaços de trabalho dentro da mesma instalação.
@@ -29,8 +29,7 @@ que o produto faz:
 
 ## Instalar
 
-O guia é o escrito para quem nunca usou Docker: vai
-do `.zip` que você recebeu até a conta do dono criada.
+
 
 Em uma linha: o CRM sobe como **um container**, buildado pelo `Dockerfile` que já vem na sua
 cópia, contra um projeto **Supabase** seu, e recebe **três variáveis de ambiente** no painel
