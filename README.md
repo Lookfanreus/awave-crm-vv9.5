@@ -29,7 +29,7 @@ que o produto faz:
 
 ## Instalar
 
-O guia é o **[`docs/DEPLOY.md`](docs/DEPLOY.md)**, escrito para quem nunca usou Docker: vai
+O guia é o escrito para quem nunca usou Docker: vai
 do `.zip` que você recebeu até a conta do dono criada.
 
 Em uma linha: o CRM sobe como **um container**, buildado pelo `Dockerfile` que já vem na sua
@@ -85,6 +85,6 @@ versão está no [`CHANGELOG.md`](CHANGELOG.md).
    de boot com a solução de cada um. Comece sempre por aqui.
 2. A **página de diagnóstico** do próprio CRM, para quando ele sobe mas alguma variável está
    errada. O guia explica quando ela aparece — e quando ela não ajuda em nada.
-3. **A área de membros onde você comprou** (<https://elitedaia.com.br>). Tenha em mãos a
+3. **(<eduardo.mvargas16@gmail.com). Tenha em mãos a
    **versão**, que aparece no rodapé de Configurações: é a primeira coisa que o suporte
    pergunta.
